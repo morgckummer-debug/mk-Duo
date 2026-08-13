@@ -1462,13 +1462,9 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
   <!-- ── Perfil ── -->
   <div class="page" id="pg-profile">
     <div class="card feat">
-      <div class="lbl">Sua gestação</div>
-      <div class="card-title">Única ou <span class="serif" style="color:var(--pd);font-style:italic">gemelar?</span></div>
-      <div class="sex-tabs" id="twinSeg" style="margin-bottom:16px">
-        <button class="stab" data-twin="0"><span class="ico">👤</span>Única</button>
-        <button class="stab" data-twin="1"><span class="ico">👯</span>Gemelar</button>
-      </div>
-      <div id="chorWrap" class="chor-wrap hidden">
+      <div class="lbl">👯 Sua gestação gemelar</div>
+      <div class="card-title">Qual a <span class="serif" style="color:var(--pd);font-style:italic">corionicidade?</span></div>
+      <div id="chorWrap" class="chor-wrap">
         <div class="helper"><strong>Corionicidade:</strong> vem do seu ultrassom entre 11 e 13 semanas e 6 dias. Se ainda não souber, seu obstetra te ajuda a identificar — dá pra deixar em branco por enquanto.</div>
         <div class="chor-list" id="chorList">
           <div class="chor-card" data-chor="dcda">
@@ -1492,7 +1488,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
 
     <div class="card feat">
       <div class="lbl">Perfil</div>
-      <div class="card-title">Deixe o app com a <span class="serif" style="color:var(--pd);font-style:italic">cara do bebê</span></div>
+      <div class="card-title">Deixe o app com a <span class="serif" style="color:var(--pd);font-style:italic">cara dos bebês</span></div>
       <div class="field"><label id="babyNameLblA">Nome do bebê</label>
         <input class="inp" type="text" id="babyNameInp" placeholder="Ex: Alice, Miguel...">
       </div>
@@ -1502,7 +1498,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
           <button class="stab" data-sex="menina"><span class="ico">🩷</span>Menina</button>
         </div>
       </div>
-      <div id="babyBFields" class="hidden">
+      <div id="babyBFields">
         <div class="field"><label>Nome do Bebê B</label>
           <input class="inp" type="text" id="babyNameInpB" placeholder="Ex: Alice, Miguel...">
         </div>
@@ -1513,13 +1509,12 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
           </div>
         </div>
       </div>
-      <div class="helper" id="profileThemeHelper">Ao escolher <strong>menina</strong>, as cores do app mudam para tons de rosa e lilás — ao escolher <strong>menino</strong>, muda-se para tons de azul.</div>
     </div>
 
     <div class="card">
       <div class="lbl">Nova gestação</div>
       <div class="card-title" style="font-size:17px">Começando <span class="serif" style="color:var(--pd);font-style:italic">tudo de novo?</span></div>
-      <div class="helper">Isso apaga, só neste aparelho, a idade gestacional salva, o nome e sexo do bebê, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso — pra você recomeçar do zero em uma nova gestação.</div>
+      <div class="helper">Isso apaga, só neste aparelho, a idade gestacional salva, a corionicidade, o nome e sexo dos bebês, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso — pra você recomeçar do zero em uma nova gestação.</div>
       <button class="btn-danger" id="resetPregBtn">🔄 Começar nova gestação</button>
     </div>
   </div>
@@ -1550,7 +1545,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
       <div class="lbl">Sobre o app</div>
       <div class="card-title" style="font-size:21px;margin-bottom:14px">MK<span style="color:var(--pd)">Duo</span> <span style="font-size:11px;color:var(--ink3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-family:inherit">· Calculadora Gestacional</span></div>
       <div class="about-bio">
-        <p>App desenvolvido para apoiar gestantes e mulheres em planejamento familiar com cálculos de idade gestacional, período fértil e acompanhamento pré-natal — incluindo gestação gemelar, com corionicidade, acompanhamento dos dois bebês e cronograma de exames adaptado.</p>
+        <p>App desenvolvido especialmente para <strong>gestação gemelar</strong>: idade gestacional compartilhada, corionicidade, acompanhamento individual dos dois bebês (com discordância de crescimento) e cronograma de exames adaptado, além de período fértil e acompanhamento pré-natal.</p>
         <p style="color:var(--ink3);font-size:12px">⚠️ Os resultados são informativos. Confirme sempre com seu obstetra.</p>
       </div>
     </div>
@@ -1864,14 +1859,16 @@ document.getElementById('darkBtn').addEventListener('click',()=>{
   showToast(isDark?'Tema escuro ativado':'Tema claro ativado',1500);
 });
 
-/* ── Perfil (nome + sexo do bebê, persistido no localStorage) ── */
+/* ── Perfil (nome + sexo dos bebês, persistido no localStorage) ──
+   MK-Duo é dedicado à gestação gemelar — twins é sempre true, sem opção de
+   voltar pra gestação única (isso já existe no MKCalc original). */
 const PROFILE_KEY='mkcalc_profile';
 function loadProfile(){
-  const base={name:'',sex:'',twins:false,chorionicity:null,babyB:{name:'',sex:''}};
+  const base={name:'',sex:'',twins:true,chorionicity:null,babyB:{name:'',sex:''}};
   try{
     const raw=localStorage.getItem(PROFILE_KEY);
     const p=raw?JSON.parse(raw):{};
-    return Object.assign({},base,p,{babyB:Object.assign({},base.babyB,p.babyB||{})});
+    return Object.assign({},base,p,{twins:true,babyB:Object.assign({},base.babyB,p.babyB||{})});
   }catch{return base;}
 }
 function saveProfile(){
@@ -1879,22 +1876,17 @@ function saveProfile(){
 }
 let profile=loadProfile();
 let currentIG=null;
-/* Em gestação gemelar o tema rosa/azul do app inteiro não faz sentido — os
-   dois bebês podem ter sexos diferentes. O tema global só reflete um sexo
-   quando é gestação única; o sexo de cada bebê aparece localmente, tingindo
-   só a metade dele no card duplo (ver .baby-half.sex-*). */
+/* O tema rosa/azul global do app não faz sentido aqui — os dois bebês podem
+   ter sexos diferentes. O sexo de cada bebê aparece localmente, tingindo só
+   a metade dele no card duplo (ver .baby-half.sex-*), nunca o app inteiro. */
 function applyProfileTheme(){
-  document.documentElement.toggleAttribute('data-girl',!profile.twins&&profile.sex==='menina');
+  document.documentElement.removeAttribute('data-girl');
 }
 function renderProfileUI(){
   document.getElementById('babyNameInp').value=profile.name||'';
   document.getElementById('babyNameInpB').value=profile.babyB.name||'';
-  document.querySelectorAll('#twinSeg .stab').forEach(b=>b.classList.toggle('on',(b.dataset.twin==='1')===profile.twins));
-  document.getElementById('chorWrap').classList.toggle('hidden',!profile.twins);
-  document.getElementById('babyBFields').classList.toggle('hidden',!profile.twins);
-  document.getElementById('babyNameLblA').textContent=profile.twins?'Nome do Bebê A':'Nome do bebê';
-  document.getElementById('babySexLblA').textContent=profile.twins?'Sexo do Bebê A':'Sexo do bebê';
-  document.getElementById('profileThemeHelper').classList.toggle('hidden',profile.twins);
+  document.getElementById('babyNameLblA').textContent='Nome do Bebê A';
+  document.getElementById('babySexLblA').textContent='Sexo do Bebê A';
   document.querySelectorAll('#sexTabs .stab').forEach(b=>b.classList.toggle('on',b.dataset.sex===profile.sex));
   document.querySelectorAll('#sexTabsB .stab').forEach(b=>b.classList.toggle('on',b.dataset.sex===profile.babyB.sex));
   document.querySelectorAll('#chorList .chor-card').forEach(c=>c.classList.toggle('on',c.dataset.chor===profile.chorionicity));
@@ -1976,18 +1968,6 @@ document.querySelectorAll('#sexTabsB .stab').forEach(btn=>{
     updateBabyNameUI();
   });
 });
-document.querySelectorAll('#twinSeg .stab').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    profile.twins=btn.dataset.twin==='1';
-    if(!profile.twins)profile.chorionicity=null;
-    saveProfile();
-    renderProfileUI();
-    applyProfileTheme();
-    updateBabyNameUI();
-    renderWeightCard();
-    renderExamGuide();
-  });
-});
 document.querySelectorAll('#chorList .chor-card').forEach(card=>{
   card.addEventListener('click',()=>{
     profile.chorionicity=card.dataset.chor;
@@ -2033,7 +2013,7 @@ function loadStoredPregnancy(){
 }
 
 document.getElementById('resetPregBtn').addEventListener('click',()=>{
-  const ok=confirm('Isso vai apagar, só neste aparelho, a idade gestacional salva, o nome e sexo do bebê, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso — pra você recomeçar do zero em uma nova gestação.\n\nDeseja continuar?');
+  const ok=confirm('Isso vai apagar, só neste aparelho, a idade gestacional salva, a corionicidade, o nome e sexo dos bebês, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso — pra você recomeçar do zero em uma nova gestação.\n\nDeseja continuar?');
   if(!ok)return;
   [PREG_KEY,PROFILE_KEY,STORAGE_KEY,EXAM_DONE_KEY,KICK_KEY,CONTR_KEY,ONB_KEY,WEIGHT_KEY].forEach(k=>{try{localStorage.removeItem(k);}catch{}});
   location.reload();
@@ -3131,10 +3111,10 @@ initMonToggle('contrHead','contrBody','contrChev');
 /* ── Tutorial de boas-vindas (aparece na 1ª visita, revisitável pelo ❔) ── */
 const ONB_KEY='mkcalc_onboarded';
 const ONBOARDING_STEPS=[
-  {ico:'🤰',title:'Bem-vinda ao MK-Duo!',desc:'Um app simples pra acompanhar sua gestação: idade gestacional, período fértil, exames e muito mais.'},
+  {ico:'👯',title:'Bem-vinda ao MK-Duo!',desc:'O app pra acompanhar sua <strong>gestação gemelar</strong>: idade gestacional, os dois bebês, exames adaptados à corionicidade e muito mais.'},
   {ico:'📅',title:'Qual sua idade gestacional?',desc:'Você pode informar pela <strong>DUM</strong>, pelo <strong>1º ultrassom</strong> ou pela <strong>DPP</strong>. A partir daí, o app calcula sua idade gestacional sozinho — sempre atualizada, toda vez que você abrir.',cta:'Informar agora',ctaPage:'calc'},
   {ico:'🧭',title:'Use as abas aqui embaixo',desc:'Calcular, Resultado, Exames e Checklist ficam sempre a um toque de distância, na barra de navegação.'},
-  {ico:'🧸',title:'Personalize na aba Perfil',desc:'Coloque aqui o nome e o sexo do seu bebê — e, se for gestação gemelar, ative o modo <strong>Gemelar</strong> pra contar com corionicidade, os dois bebês e exames adaptados.'},
+  {ico:'🧸',title:'Personalize na aba Perfil',desc:'Coloque aqui o nome e o sexo de cada bebê, e a <strong>corionicidade</strong> da gestação — se ainda não souber, dá pra deixar em branco por enquanto.'},
   {ico:'✨',title:'Pronto!',desc:'Você já pode começar. Sempre que quiser rever este tutorial, é só tocar no <span class="onb-help-mark">?</span> lá em cima. Começando uma <strong>nova gestação</strong>? Na aba Perfil tem a opção "Começar nova gestação", que apaga os dados antigos pra você recomeçar do zero.'}
 ];
 let onbStep=0;
