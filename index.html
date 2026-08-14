@@ -654,9 +654,6 @@ body::after{
 .kick-bar{width:100%;max-width:22px;border-radius:5px 5px 2px 2px;
   background:linear-gradient(180deg,var(--peach),var(--pd));min-height:6px;transition:var(--trans)}
 .kick-bar.is-last{background:linear-gradient(180deg,#fff2df,var(--pd2))}
-/* Menina já herda rosa/lilás de --peach/--pd via [data-girl]; menino fica azul, espelhando a cor usada no checkbox de exames. */
-.kick-bar.boy{background:linear-gradient(180deg,var(--blue),var(--bd))}
-.kick-bar.boy.is-last{background:linear-gradient(180deg,#dce6ee,var(--bd))}
 
 /* Botão circular "orb" — ação principal dos monitores */
 .mv-ring-btn{
@@ -1311,13 +1308,13 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
         <button class="mon-head" id="kickHead" type="button" aria-expanded="false">
           <div class="mon-head-txt">
             <div class="lbl">🤰 Bem-estar fetal</div>
-            <div class="card-title mon-head-title">Movimentos do <span class="serif" style="color:var(--pd);font-style:italic">bebê</span></div>
+            <div class="card-title mon-head-title">Movimentos dos <span class="serif" style="color:var(--pd);font-style:italic">bebês</span></div>
             <div class="mon-head-sub" id="kickHeadSub">Nenhum registro ainda</div>
           </div>
           <i class="mon-chev" id="kickChev">▾</i>
         </button>
         <div class="mon-body" id="kickBody">
-          <div class="helper">Escolha um momento tranquilo — de preferência sempre no mesmo horário — e conte até sentir <strong>10 movimentos</strong>. Não existe um número "certo" de minutos: o que importa é você conhecer o seu próprio padrão, não comparar com números fixos. <span style="color:var(--ink3)">Sentiu diferente do seu costume, ou está preocupada? Fale com seu obstetra a qualquer momento — não precisa esperar a contagem terminar.</span></div>
+          <div class="helper">Escolha um momento tranquilo — de preferência sempre no mesmo horário — e conte até sentir <strong>10 movimentos</strong>, dos dois bebês juntos. Em gemelar não dá pra saber com certeza qual bebê se mexeu, então a contagem é sempre combinada — o que importa é você conhecer o padrão geral, não separar por bebê nem comparar com números fixos. <span style="color:var(--ink3)">Sentiu diferente do seu costume, ou está preocupada? Fale com seu obstetra a qualquer momento — não precisa esperar a contagem terminar.</span></div>
           <div class="exm-cta" id="kickStartBtn" style="margin-top:12px">
             <div>
               <div class="exm-cta-txt">👣 Começar contagem</div>
@@ -2594,7 +2591,7 @@ function renderKickCard(){
       </div>
       <div class="kick-chart">${recent.map((k,i)=>{
         const h=Math.max(8,Math.round((k.ms/maxMs)*100));
-        const cls=['kick-bar',profile.sex==='menino'?'boy':'',i===recent.length-1?'is-last':''].filter(Boolean).join(' ');
+        const cls=['kick-bar',i===recent.length-1?'is-last':''].filter(Boolean).join(' ');
         return `<div class="kick-bar-col"><div class="${cls}" style="height:${h}%" title="${fmt(new Date(k.date))} · ${fmtKickDuration(k.ms)}"></div></div>`;
       }).join('')}</div>`;
   }
