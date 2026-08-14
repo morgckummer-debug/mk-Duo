@@ -1334,6 +1334,28 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
         </div>
       </div>
 
+      <div class="card feat" id="totgCard">
+        <button class="mon-head" id="totgHead" type="button" aria-expanded="false">
+          <div class="mon-head-txt">
+            <div class="lbl">🩺 Saúde materna</div>
+            <div class="card-title mon-head-title">Curva <span class="serif" style="color:var(--pd);font-style:italic">glicêmica</span></div>
+            <div class="mon-head-sub" id="totgHeadSub">Ainda não realizada</div>
+          </div>
+          <i class="mon-chev" id="totgChev">▾</i>
+        </button>
+        <div class="mon-body" id="totgBody">
+          <div class="helper">O TOTG (curva glicêmica) é feito <strong>uma única vez</strong>, entre 24 e 28 semanas, com coleta em jejum e depois de 1h e 2h da glicose. Registre aqui os 3 valores pra guardar o resultado e levar pro seu obstetra. <span style="color:var(--ink3)">Critérios da IADPSG — o diagnóstico e a conduta são sempre definidos pelo seu médico.</span></div>
+          <div id="totgResultWrap"></div>
+          <div class="exm-cta" id="totgAddBtn">
+            <div>
+              <div class="exm-cta-txt">🧪 Registrar resultado</div>
+              <div class="exm-cta-sub" id="totgLastSub">Ainda não realizada</div>
+            </div>
+            <div class="exm-cta-arrow">→</div>
+          </div>
+        </div>
+      </div>
+
       <div class="card feat" id="kickCard">
         <button class="mon-head" id="kickHead" type="button" aria-expanded="false">
           <div class="mon-head-txt">
@@ -1541,7 +1563,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
     <div class="card">
       <div class="lbl">Nova gestação</div>
       <div class="card-title" style="font-size:17px">Começando <span class="serif" style="color:var(--pd);font-style:italic">tudo de novo?</span></div>
-      <div class="helper">Isso apaga, só neste aparelho, a idade gestacional salva, a corionicidade, o nome e sexo dos bebês, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso e pressão — pra você recomeçar do zero em uma nova gestação.</div>
+      <div class="helper">Isso apaga, só neste aparelho, a idade gestacional salva, a corionicidade, o nome e sexo dos bebês, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso, pressão e curva glicêmica — pra você recomeçar do zero em uma nova gestação.</div>
       <button class="btn-danger" id="resetPregBtn">🔄 Começar nova gestação</button>
     </div>
   </div>
@@ -1637,6 +1659,15 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
     <div class="exm-sheet-handle"></div>
     <button class="exm-sheet-close" id="bpClose">✕</button>
     <div id="bpSheetBody"></div>
+  </div>
+</div>
+
+<!-- Registro da curva glicêmica (TOTG) -->
+<div class="exm-overlay" id="totgOverlay">
+  <div class="exm-sheet" id="totgSheet">
+    <div class="exm-sheet-handle"></div>
+    <button class="exm-sheet-close" id="totgClose">✕</button>
+    <div id="totgSheetBody"></div>
   </div>
 </div>
 
@@ -2056,9 +2087,9 @@ function loadStoredPregnancy(){
 }
 
 document.getElementById('resetPregBtn').addEventListener('click',()=>{
-  const ok=confirm('Isso vai apagar, só neste aparelho, a idade gestacional salva, a corionicidade, o nome e sexo dos bebês, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso e pressão — pra você recomeçar do zero em uma nova gestação.\n\nDeseja continuar?');
+  const ok=confirm('Isso vai apagar, só neste aparelho, a idade gestacional salva, a corionicidade, o nome e sexo dos bebês, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso, pressão e curva glicêmica — pra você recomeçar do zero em uma nova gestação.\n\nDeseja continuar?');
   if(!ok)return;
-  [PREG_KEY,PROFILE_KEY,STORAGE_KEY,EXAM_DONE_KEY,KICK_KEY,CONTR_KEY,ONB_KEY,WEIGHT_KEY,BP_KEY].forEach(k=>{try{localStorage.removeItem(k);}catch{}});
+  [PREG_KEY,PROFILE_KEY,STORAGE_KEY,EXAM_DONE_KEY,KICK_KEY,CONTR_KEY,ONB_KEY,WEIGHT_KEY,BP_KEY,TOTG_KEY].forEach(k=>{try{localStorage.removeItem(k);}catch{}});
   location.reload();
 });
 
@@ -3271,6 +3302,129 @@ document.querySelectorAll('#htnTabs .stab').forEach(btn=>{
 });
 renderBPCard();
 
+/* ── Curva glicêmica (TOTG) ──
+   Diferente de peso/pressão, não é uma série ao longo da gestação — é um
+   exame pontual, feito uma única vez entre 24 e 28 semanas. Por isso guarda
+   um único resultado (com os 3 valores), editável/removível, em vez de um
+   histórico. Salvar um resultado marca automaticamente o exame como
+   realizado (mesma chave 'lab-1' usada no Guia de Exames e na Checklist —
+   ver CHECKLIST_EXAM_LINK), pra não duplicar a marcação em dois lugares. */
+const TOTG_KEY='mkcalc_totg_v1';
+const TOTG_EXAM_KEY='lab-1';
+/* Critérios da IADPSG: 1 valor igual ou acima do ponto de corte já fecha
+   diagnóstico de diabetes gestacional. */
+const TOTG_CUTOFFS={jejum:92,h1:180,h2:153};
+const TOTG_FIELDS=[{k:'jejum',lbl:'Jejum'},{k:'h1',lbl:'Após 1h'},{k:'h2',lbl:'Após 2h'}];
+function loadTOTG(){
+  try{const raw=localStorage.getItem(TOTG_KEY);return raw?JSON.parse(raw):null;}
+  catch{return null;}
+}
+function saveTOTG(){
+  try{
+    if(totgResult)localStorage.setItem(TOTG_KEY,JSON.stringify(totgResult));
+    else localStorage.removeItem(TOTG_KEY);
+  }catch{}
+}
+let totgResult=loadTOTG();
+function totgAltered(field,val){return val>=TOTG_CUTOFFS[field];}
+function totgHasAlteredValue(r){return TOTG_FIELDS.some(f=>totgAltered(f.k,r[f.k]));}
+function renderTOTGResult(){
+  const wrap=document.getElementById('totgResultWrap');
+  if(!totgResult){wrap.innerHTML='';return;}
+  const r=totgResult;
+  const altered=totgHasAlteredValue(r);
+  wrap.innerHTML=`
+    <div class="stat-grid" style="margin-bottom:14px">
+      ${TOTG_FIELDS.map(f=>{
+        const val=r[f.k];
+        const isAlt=totgAltered(f.k,val);
+        return `<div class="stat"><div class="lbl">${f.lbl}</div><div class="val serif">${val}</div>
+          <div class="bmi-pill tone-${isAlt?'ob':'normal'}" style="margin-top:6px;font-size:9.5px;padding:3px 9px">${isAlt?'Alterado':'Normal'}</div></div>`;
+      }).join('')}
+    </div>
+    <div class="wg-summary">
+      <div class="wg-summary-top"><div class="wg-summary-val">${altered?'⚠️ Resultado alterado':'✅ Dentro da normalidade'}</div></div>
+      <div class="wg-summary-txt">${altered
+        ?'Pelos critérios da IADPSG, basta <strong>1 valor</strong> igual ou acima do ponto de corte pra fechar o diagnóstico de diabetes gestacional. Leve esse resultado ao seu obstetra.'
+        :'Os 3 valores ficaram dentro da faixa considerada normal pelos critérios da IADPSG.'}</div>
+    </div>
+    <div class="exm-cta" id="totgEditBtn" style="margin-top:14px">
+      <div>
+        <div class="exm-cta-txt">✏️ Editar resultado</div>
+        <div class="exm-cta-sub">Realizado em ${fmt(new Date(r.date))}</div>
+      </div>
+      <div class="exm-cta-arrow">→</div>
+    </div>
+    <button class="kick-cancel-btn" id="totgDeleteBtn" type="button">Excluir registro</button>`;
+  document.getElementById('totgEditBtn').addEventListener('click',openTOTGSheet);
+  document.getElementById('totgDeleteBtn').addEventListener('click',()=>{
+    if(!confirm('Excluir o resultado registrado da curva glicêmica?'))return;
+    totgResult=null;
+    saveTOTG();
+    renderTOTGCard();
+  });
+}
+function renderTOTGCard(){
+  const addBtn=document.getElementById('totgAddBtn');
+  addBtn.classList.toggle('hidden',!!totgResult);
+  const subTxt=totgResult
+    ?`Realizado em ${fmt(new Date(totgResult.date))} · ${totgHasAlteredValue(totgResult)?'Resultado alterado':'Normal'}`
+    :'Ainda não realizada';
+  document.getElementById('totgLastSub').textContent=subTxt;
+  document.getElementById('totgHeadSub').textContent=subTxt;
+  renderTOTGResult();
+}
+function renderTOTGSheetBody(){
+  const body=document.getElementById('totgSheetBody');
+  const todayISO=toISO(TODAY);
+  const r=totgResult;
+  body.innerHTML=`
+    <div class="exm-sheet-name">${r?'Editar resultado':'Registrar resultado'}</div>
+    <div class="exm-sheet-desc">Informe os 3 valores da curva (jejum, 1h e 2h após a glicose), em mg/dL.</div>
+    <div class="field"><label>Data do exame</label>
+      <input class="inp" type="date" id="totgDateInp" value="${r?toISO(new Date(r.date)):todayISO}" max="${todayISO}">
+    </div>
+    <div class="row2">
+      <div class="field"><label>Jejum</label><input class="inp" type="number" id="totgJejumInp" placeholder="mg/dL" step="1" min="0" inputmode="numeric" value="${r?r.jejum:''}"></div>
+      <div class="field"><label>Após 1h</label><input class="inp" type="number" id="totgH1Inp" placeholder="mg/dL" step="1" min="0" inputmode="numeric" value="${r?r.h1:''}"></div>
+    </div>
+    <div class="field"><label>Após 2h</label><input class="inp" type="number" id="totgH2Inp" placeholder="mg/dL" step="1" min="0" inputmode="numeric" value="${r?r.h2:''}"></div>
+    <button class="kick-tap-btn" id="totgSaveBtn" type="button">Salvar resultado</button>
+    <button class="kick-cancel-btn" id="totgCancelBtn" type="button">Cancelar</button>`;
+  document.getElementById('totgSaveBtn').addEventListener('click',()=>{
+    const jejum=parseInt(document.getElementById('totgJejumInp').value,10);
+    const h1=parseInt(document.getElementById('totgH1Inp').value,10);
+    const h2=parseInt(document.getElementById('totgH2Inp').value,10);
+    if(!jejum||!h1||!h2||jejum<=0||h1<=0||h2<=0){showToast('Informe os 3 valores da curva',1500);return;}
+    const dateStr=document.getElementById('totgDateInp').value;
+    if(!dateStr){showToast('Informe a data do exame',1500);return;}
+    const entryDate=new Date(`${dateStr}T00:00:00`);
+    if(entryDate.getTime()>Date.now()){showToast('A data não pode ser no futuro',1500);return;}
+    totgResult={date:entryDate.toISOString(),jejum,h1,h2};
+    saveTOTG();
+    examDone[TOTG_EXAM_KEY]=true;
+    saveExamDone();
+    if(typeof renderExamGuide==='function')renderExamGuide();
+    if(typeof buildChecklist==='function')buildChecklist();
+    renderTOTGCard();
+    closeTOTGSheet();
+    showToast('Resultado registrado',1500);
+  });
+  document.getElementById('totgCancelBtn').addEventListener('click',closeTOTGSheet);
+}
+function openTOTGSheet(){
+  renderTOTGSheetBody();
+  document.getElementById('totgOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('totgJejumInp')?.focus(),80);
+}
+function closeTOTGSheet(){
+  document.getElementById('totgOverlay').classList.remove('show');
+}
+document.getElementById('totgAddBtn').addEventListener('click',openTOTGSheet);
+document.getElementById('totgClose').addEventListener('click',closeTOTGSheet);
+document.getElementById('totgOverlay').addEventListener('click',e=>{if(e.target.id==='totgOverlay')closeTOTGSheet();});
+renderTOTGCard();
+
 /* Cabeçalhos comprimidos dos cards de monitoramento (peso, pressão, movimentos,
    contrações) — clique abre/fecha o card inteiro, fechado por padrão. */
 function initMonToggle(headId,bodyId,chevId){
@@ -3283,6 +3437,7 @@ function initMonToggle(headId,bodyId,chevId){
 }
 initMonToggle('weightHead','weightBody','weightChev');
 initMonToggle('bpHead','bpBody','bpChev');
+initMonToggle('totgHead','totgBody','totgChev');
 initMonToggle('kickHead','kickBody','kickChev');
 initMonToggle('contrHead','contrBody','contrChev');
 
