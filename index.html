@@ -1239,7 +1239,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
                 <span class="femur-unit">cm</span>
               </div>
               <div class="femur-result hidden" id="femurResultB"></div>
-              <div class="femur-row">
+              <div class="femur-row" id="weightEstRowB">
                 <input class="inp" type="number" id="weightEstInpB" placeholder="Peso estimado" step="1" min="0" inputmode="decimal">
                 <span class="femur-unit">g</span>
               </div>
@@ -1931,6 +1931,13 @@ function updateBabyLabels(ig){
   document.getElementById('duoBadgeA').textContent=`${SEX_ICON[profile.sex]||'👤'} ${profile.name||'Bebê A'}`;
   document.getElementById('duoBadgeB').textContent=`${SEX_ICON[profile.babyB.sex]||'👤'} ${profile.babyB.name||'Bebê B'}`;
 
+  /* Discordância de crescimento só faz sentido a partir de ~20 semanas —
+     antes disso as estimativas de peso fetal não são confiáveis o
+     suficiente pra comparar um bebê com o outro. */
+  const growthTrackingOn=ig.weeks>20;
+  document.getElementById('weightEstRowA').classList.toggle('hidden',!growthTrackingOn);
+  document.getElementById('weightEstRowB').classList.toggle('hidden',!growthTrackingOn);
+
   renderDiscordance();
 }
 function updateBabyNameUI(){
@@ -2090,7 +2097,7 @@ function computeDiscordance(){
 }
 function renderDiscordance(){
   const card=document.getElementById('discordCard');
-  if(!profile.twins){card.classList.add('hidden');return;}
+  if(!profile.twins||!currentIG||currentIG.weeks<=20){card.classList.add('hidden');return;}
   card.classList.remove('hidden');
   const d=computeDiscordance();
   if(!d){
