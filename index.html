@@ -56,6 +56,26 @@
   --peach:#a8577f;--pd:#9a4a8f;--pd2:#7f3d78;
 }
 
+/* ── Cor dos bebês (anel de IG, linha do tempo, gráfico de peso) ──
+   Só tinge --track/--track2 (os "acentos do bebê"), nunca --peach — a cor de
+   marca do app usada em botões e CTAs não deve mudar conforme o sexo dos
+   bebês, já que em gestação gemelar pode haver um de cada. Duas meninas:
+   rosa. Dois meninos: fica no padrão azul (--blue/--bd). Um de cada: como o
+   anel e a linha do tempo já são um gradiente de --track pra --track2, basta
+   ir de azul (--track) a rosa (--track2) que o degradê sai sozinho. */
+[data-babies="girls"],[data-babies="mixed"]{
+  --pinkAcc:#f7c9e3;--pinkAcc2:#d98fc4;
+}
+[data-dark][data-babies="girls"],[data-dark][data-babies="mixed"]{
+  --pinkAcc:#a8577f;--pinkAcc2:#9a4a8f;
+}
+[data-babies="girls"]{
+  --track:var(--pinkAcc);--track2:var(--pinkAcc2);
+}
+[data-babies="mixed"]{
+  --track:var(--blue);--track2:var(--pinkAcc2);
+}
+
 /* ── Base ── */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow-x:hidden;background:var(--bg)}
@@ -1943,11 +1963,22 @@ function saveProfile(){
 }
 let profile=loadProfile();
 let currentIG=null;
-/* O tema rosa/azul global do app não faz sentido aqui — os dois bebês podem
-   ter sexos diferentes. O sexo de cada bebê aparece localmente, tingindo só
-   a metade dele no card duplo (ver .baby-half.sex-*), nunca o app inteiro. */
+/* O tema rosa/lilás de --peach (herdado do MKCalc de gestação única) não faz
+   sentido aqui pro app inteiro — os dois bebês podem ter sexos diferentes, e
+   recolorir botões/CTAs pelo sexo de um deles não faria sentido. O sexo de
+   cada bebê aparece localmente, tingindo só a metade dele no card duplo (ver
+   .baby-half.sex-*). Já os acentos "do bebê" (anel de IG, linha do tempo,
+   gráfico de peso — tudo que usa --track/--track2) refletem os dois sexos
+   juntos: duas meninas ficam rosa, dois meninos ficam no azul padrão, e um
+   de cada vira um degradê de azul pra rosa (ver [data-babies] no CSS). */
 function applyProfileTheme(){
   document.documentElement.removeAttribute('data-girl');
+  const a=profile.sex,b=profile.babyB.sex;
+  let key=null;
+  if(a==='menina'&&b==='menina')key='girls';
+  else if((a==='menina'&&b==='menino')||(a==='menino'&&b==='menina'))key='mixed';
+  if(key)document.documentElement.setAttribute('data-babies',key);
+  else document.documentElement.removeAttribute('data-babies');
 }
 function renderProfileUI(){
   document.getElementById('babyNameInp').value=profile.name||'';
@@ -2023,6 +2054,16 @@ document.getElementById('babyNameInpB').addEventListener('input',e=>{
   saveProfile();
   updateBabyNameUI();
 });
+/* Mostra um toast só quando o sexo dos dois bebês já definido muda o tema de
+   acento (ver applyProfileTheme) — silencioso enquanto falta informar um dos
+   dois, pra não notificar sobre um tema que ainda nem se aplica. */
+function toastBabyTheme(){
+  const a=profile.sex,b=profile.babyB.sex;
+  if(!a||!b)return;
+  if(a==='menina'&&b==='menina')showToast('Tema rosa ativado no anel e na linha do tempo 🩷',1500);
+  else if(a==='menino'&&b==='menino')showToast('Tema azul ativado no anel e na linha do tempo 💙',1500);
+  else showToast('Degradê azul → rosa ativado no anel e na linha do tempo 💙🩷',1500);
+}
 document.querySelectorAll('#sexTabs .stab').forEach(btn=>{
   btn.addEventListener('click',()=>{
     profile.sex=btn.dataset.sex;
@@ -2031,7 +2072,7 @@ document.querySelectorAll('#sexTabs .stab').forEach(btn=>{
     applyProfileTheme();
     updateBabyNameUI();
     renderKickCard();
-    if(!profile.twins)showToast(profile.sex==='menina'?'Tema rosa/lilás ativado 🩷':'Tema padrão ativado 💙',1500);
+    toastBabyTheme();
   });
 });
 document.querySelectorAll('#sexTabsB .stab').forEach(btn=>{
@@ -2039,7 +2080,9 @@ document.querySelectorAll('#sexTabsB .stab').forEach(btn=>{
     profile.babyB.sex=btn.dataset.sex;
     saveProfile();
     renderProfileUI();
+    applyProfileTheme();
     updateBabyNameUI();
+    toastBabyTheme();
   });
 });
 document.querySelectorAll('#chorList .chor-card').forEach(card=>{
