@@ -721,14 +721,26 @@ body::after{
 .resumo-table td.alert{color:var(--alert);font-weight:800}
 .resumo-note{font-size:11px;color:var(--ink3);margin-top:6px}
 @media print{
+  @page{size:A4;margin:12mm}
   body *{visibility:hidden}
   #resumoSheet, #resumoSheet *{visibility:visible}
   #resumoSheet{
     position:absolute;inset:0;max-width:none;max-height:none;overflow:visible;
-    box-shadow:none;border-radius:0;padding:24px;background:#fff;
+    box-shadow:none;border-radius:0;padding:0;background:#fff;
   }
   .no-print{display:none!important}
-  .resumo-table td.alert{color:#b3261e;text-decoration:underline}
+  /* Compacto de propósito — o resumo inteiro precisa caber numa folha A4 só. */
+  #resumoSheet .exm-sheet-name{font-size:16px;margin-bottom:2px}
+  #resumoSheet .exm-sheet-desc{font-size:10.5px;margin-bottom:4px;color:#555}
+  #resumoSheet .resumo-sec{margin-top:9px}
+  #resumoSheet .resumo-sec-title{font-size:12px;margin-bottom:4px;padding-bottom:3px}
+  #resumoSheet .resumo-grid{font-size:10.5px;gap:3px 14px}
+  #resumoSheet .resumo-table{font-size:10px}
+  #resumoSheet .resumo-table th{padding:0 6px 2px 0}
+  #resumoSheet .resumo-table td{padding:2px 6px 2px 0}
+  #resumoSheet .resumo-note{font-size:8.5px;margin-top:3px}
+  #resumoSheet .resumo-empty{font-size:10px}
+  .resumo-table td.alert{color:#b3261e;text-decoration:underline;font-weight:700}
 }
 
 /* Contador de movimentos fetais / monitor de contrações */
@@ -1570,7 +1582,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
       <div class="card feat">
         <div class="lbl">📋 Pra levar na consulta</div>
         <div class="card-title">Resumo pro <span class="serif" style="color:var(--pd);font-style:italic">seu obstetra</span></div>
-        <div class="helper">Reúne idade gestacional, corionicidade, crescimento dos bebês, pressão, glicemia, peso, movimentos e contrações numa tela só — pra mostrar ou imprimir na consulta.</div>
+        <div class="helper">Reúne idade gestacional, corionicidade, pressão, glicemia, peso, movimentos e contrações numa tela só — pra mostrar ou imprimir na consulta.</div>
         <div class="exm-cta" id="resumoOpenBtn" style="margin-top:12px">
           <div>
             <div class="exm-cta-txt">📋 Ver resumo pra consulta</div>
@@ -3879,21 +3891,6 @@ function renderResumoBody(){
     </dl>${surv?`<div class="resumo-note">${surv.html.replace(/^[🟢🟠🔴]\s*/u,'')}</div>`:''}`;
   }
 
-  const femurA=document.getElementById('femurInpA').value;
-  const femurB=document.getElementById('femurInpB').value;
-  const weA=document.getElementById('weightEstInpA').value;
-  const weB=document.getElementById('weightEstInpB').value;
-  const disc=computeDiscordance();
-  const hasBabyData=femurA||femurB||weA||weB;
-  const babiesHtml=hasBabyData?`<dl class="resumo-grid">
-      <dt>${profile.name||'Bebê A'} — fêmur</dt><dd>${femurA?femurA+' cm':'—'}</dd>
-      <dt>${profile.name||'Bebê A'} — peso estimado</dt><dd>${weA?weA+' g':'—'}</dd>
-      <dt>${profile.babyB.name||'Bebê B'} — fêmur</dt><dd>${femurB?femurB+' cm':'—'}</dd>
-      <dt>${profile.babyB.name||'Bebê B'} — peso estimado</dt><dd>${weB?weB+' g':'—'}</dd>
-      ${disc?`<dt>Discordância de crescimento</dt><dd>${Math.round(disc.diffG)} g · ${disc.pct.toFixed(1)}%</dd>`:''}
-    </dl><div class="resumo-note">Valores da última medição informada no app (não fica salvo de uma visita pra outra — confira se está atualizado antes de mostrar).</div>`
-    :'<div class="resumo-empty">Nenhum fêmur/peso estimado informado ainda.</div>';
-
   const wEntries=filterByPeriod(weightEntries,resumoRangeDays,'date');
   const weightRows=[...wEntries].reverse().map(w=>`<tr><td>${fmt(new Date(w.date))}</td><td>${fmtKg(w.kg)}</td></tr>`);
   const weightHtml=resumoTable(['Data','Peso'],weightRows);
@@ -3906,12 +3903,26 @@ function renderResumoBody(){
   });
   const bpHtml=resumoTable(['Data','Hora','PA'],bpRows)+'<div class="resumo-note">Destacado: sistólica ≥140 ou diastólica ≥90 mmHg.</div>';
 
+  /* Uma linha por dia, uma coluna por momento — é assim que um diário
+     glicêmico costuma ser lido na consulta. Se houver mais de uma medição
+     do mesmo momento no mesmo dia (ex: 1h após café e após almoço), mostra
+     os dois valores separados por "/" na mesma célula. */
   const glicFiltered=filterByPeriod(glicEntries,resumoRangeDays,'date');
-  const glicRows=[...glicFiltered].reverse().map(g=>{
-    const alert=classifyGlic(g.context,g.value).tone==='ob';
-    return `<tr><td>${fmt(new Date(g.date))}</td><td>${fmtClock(new Date(g.date))}</td><td>${glicCtxLbl(g.context)}${g.meal?` (${g.meal})`:''}</td><td${alert?' class="alert"':''}>${g.value} mg/dL</td></tr>`;
+  const glicByDate=new Map();
+  glicFiltered.forEach(g=>{
+    const dayKey=toISO(new Date(g.date));
+    if(!glicByDate.has(dayKey))glicByDate.set(dayKey,{date:new Date(g.date),jejum:[],'1h':[],'2h':[]});
+    glicByDate.get(dayKey)[g.context].push(g.value);
   });
-  const glicHtml=resumoTable(['Data','Hora','Momento','Valor'],glicRows)+'<div class="resumo-note">Destacado: jejum ≥95, 1h pós-refeição ≥140 ou 2h pós-refeição ≥120 mg/dL.</div>';
+  function glicCell(values,ctx){
+    if(!values.length)return'<td>—</td>';
+    const alert=values.some(v=>v>=GLIC_CUTOFFS[ctx]);
+    return `<td${alert?' class="alert"':''}>${values.join(' / ')}</td>`;
+  }
+  const glicRows=[...glicByDate.values()].sort((a,b)=>b.date-a.date).map(d=>
+    `<tr><td>${fmt(d.date)}</td>${glicCell(d.jejum,'jejum')}${glicCell(d['1h'],'1h')}${glicCell(d['2h'],'2h')}</tr>`
+  );
+  const glicHtml=resumoTable(['Data','Jejum','Após 1h','Após 2h'],glicRows)+'<div class="resumo-note">Valores em mg/dL. Destacado: jejum ≥95, 1h ≥140 ou 2h ≥120.</div>';
 
   const kickFiltered=filterByPeriod(kickSessions,resumoRangeDays,'date');
   const kickRows=[...kickFiltered].reverse().map(k=>`<tr><td>${fmt(new Date(k.date))}</td><td>${fmtClock(new Date(k.date))}</td><td>${fmtKickDuration(k.ms)} para 10 movimentos</td></tr>`);
@@ -3935,7 +3946,6 @@ function renderResumoBody(){
     <div class="resumo-note" style="margin-bottom:14px">Período das tabelas: ${rangeLbl}.</div>
 
     <div class="resumo-sec"><div class="resumo-sec-title">Gestação</div>${gestHtml}</div>
-    <div class="resumo-sec"><div class="resumo-sec-title">Crescimento dos bebês</div>${babiesHtml}</div>
     <div class="resumo-sec"><div class="resumo-sec-title">Peso materno</div>${weightHtml}</div>
     <div class="resumo-sec"><div class="resumo-sec-title">Pressão arterial</div>${bpHtml}</div>
     <div class="resumo-sec"><div class="resumo-sec-title">Glicemia capilar</div>${glicHtml}</div>
