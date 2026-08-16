@@ -3627,7 +3627,9 @@ document.getElementById('onbNext').addEventListener('click',()=>{
 });
 document.getElementById('onbSkip').addEventListener('click',closeOnboarding);
 document.getElementById('onbHelpBtn').addEventListener('click',openOnboarding);
-if(!localStorage.getItem(ONB_KEY))openOnboarding();
+/* O tutorial de boas-vindas só abre depois do login (ver onLoginSuccess) —
+   antes disso ele competia com a tela de entrar/criar conta, abrindo os
+   dois ao mesmo tempo pra quem acessava o app pela primeira vez. */
 
 loadStoredPregnancy();
 /* ══════════════════════════════════════════════════════════════
@@ -3875,6 +3877,9 @@ async function onLoginSuccess(){
   updateBabyNameUI();
   loadStoredPregnancy();
   applyPremiumGate();
+  // Tutorial de boas-vindas só na 1ª vez, e só depois que ela já está
+  // logada — evita competir com a tela de entrar/criar conta.
+  if(!localStorage.getItem(ONB_KEY))setTimeout(openOnboarding,400);
 }
 
 /* Verifica, ao abrir o app, se já existe uma sessão ativa (usuária
