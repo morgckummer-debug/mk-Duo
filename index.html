@@ -518,6 +518,10 @@ body::after{
 [data-dark] .card.feat .chor-card{background:rgba(50,39,24,.55)}
 .chor-card.on{border-color:var(--pd);box-shadow:var(--cs),0 0 0 1px var(--pd) inset;background:var(--surfs)}
 .card.feat .chor-card.on{background:rgba(253,245,234,.85)}
+/* No tema escuro, o card selecionado mantém esse fundo claro fixo (de
+   propósito, pra destacar a seleção) — por isso o título precisa virar
+   marrom aqui, senão fica claro sobre claro. */
+[data-dark] .card.feat .chor-card.on .chor-name{color:var(--pd2)}
 .chor-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
 .chor-name{font-family:'Fraunces',serif;font-size:15px;color:var(--ink)}
 .chor-check{width:19px;height:19px;border-radius:50%;border:1.5px solid var(--ink3);flex-shrink:0;display:grid;place-items:center;transition:var(--trans)}
@@ -1800,6 +1804,9 @@ let isTrialActive=false;
 let trialDaysLeft=0;
 let currentUser=null;
 const PREMIUM_ACCORDION_IDS=['weightCard','bpCard','totgCard'];
+/* E-mails que sempre têm acesso completo, independente de teste grátis
+   ou compra na Kiwify — uso pra conta de testes da própria dra. Morgana. */
+const PREMIUM_EMAIL_OVERRIDES=['morgckummer@gmail.com'];
 
 const TODAY = new Date();
 const fmt = d => {
@@ -3760,6 +3767,10 @@ document.getElementById('logoutBtn').addEventListener('click',async()=>{
    assinatura ativa OU ainda estiver dentro do prazo de teste. */
 async function checkPremiumStatus(){
   if(!currentUser){isPremium=false;isTrialActive=false;trialDaysLeft=0;return;}
+  if(currentUser.email&&PREMIUM_EMAIL_OVERRIDES.includes(currentUser.email.trim().toLowerCase())){
+    isPremium=true;isTrialActive=false;trialDaysLeft=0;
+    return;
+  }
   let hasActiveSub=false;
   try{
     const{data,error}=await sb.from('subscriptions').select('status').eq('user_id',currentUser.id).maybeSingle();
