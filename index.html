@@ -721,26 +721,54 @@ body::after{
 .resumo-table td.alert{color:var(--alert);font-weight:800}
 .resumo-note{font-size:11px;color:var(--ink3);margin-top:6px}
 @media print{
-  @page{size:A4;margin:12mm}
+  @page{size:A4;margin:14mm 16mm}
   body *{visibility:hidden}
   #resumoSheet, #resumoSheet *{visibility:visible}
   #resumoSheet{
     position:absolute;inset:0;max-width:none;max-height:none;overflow:visible;
     box-shadow:none;border-radius:0;padding:0;background:#fff;
+    font-family:'DM Sans',Arial,sans-serif;color:#1a1a1a;
   }
   .no-print{display:none!important}
-  /* Compacto de propósito — o resumo inteiro precisa caber numa folha A4 só. */
-  #resumoSheet .exm-sheet-name{font-size:16px;margin-bottom:2px}
-  #resumoSheet .exm-sheet-desc{font-size:10.5px;margin-bottom:4px;color:#555}
-  #resumoSheet .resumo-sec{margin-top:9px}
-  #resumoSheet .resumo-sec-title{font-size:12px;margin-bottom:4px;padding-bottom:3px}
-  #resumoSheet .resumo-grid{font-size:10.5px;gap:3px 14px}
-  #resumoSheet .resumo-table{font-size:10px}
-  #resumoSheet .resumo-table th{padding:0 6px 2px 0}
-  #resumoSheet .resumo-table td{padding:2px 6px 2px 0}
-  #resumoSheet .resumo-note{font-size:8.5px;margin-top:3px}
-  #resumoSheet .resumo-empty{font-size:10px}
-  .resumo-table td.alert{color:#b3261e;text-decoration:underline;font-weight:700}
+
+  /* Cabeçalho tipo timbre: nome do documento + regra grossa embaixo,
+     no lugar da fonte serifada/decorativa usada dentro do app. */
+  #resumoSheet .exm-sheet-name{
+    font-family:'DM Sans',Arial,sans-serif;font-weight:700;font-size:15px;
+    letter-spacing:.01em;margin:0 0 3px;color:#111;
+  }
+  #resumoSheet .exm-sheet-desc{
+    font-size:9.5px;color:#555;margin:0 0 9px;padding-bottom:7px;border-bottom:1.25px solid #111;
+  }
+
+  #resumoSheet .resumo-sec{margin-top:11px;break-inside:avoid}
+  #resumoSheet .resumo-sec-title{
+    font-family:inherit;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+    color:#111;margin-bottom:5px;padding-bottom:3px;border-bottom:.75px solid #111;
+  }
+
+  /* Dados da gestação: rótulo com largura fixa e enxuta — não mais 1fr/1fr
+     esticado até a borda da folha, que era o que abria aquele vão enorme
+     entre rótulo e valor. */
+  #resumoSheet .resumo-grid{
+    display:grid;grid-template-columns:112px 1fr;gap:3px 8px;font-size:10px;max-width:340px;
+  }
+  #resumoSheet .resumo-grid dt{color:#555;font-weight:600}
+  #resumoSheet .resumo-grid dd{margin:0;color:#111;font-weight:700}
+
+  /* Tabelas: largura pelo conteúdo (não 100% da página), colunas com
+     padding fixo e enxuto em vez de espaço distribuído pelo navegador. */
+  #resumoSheet .resumo-table{width:auto;border-collapse:collapse;font-size:9.5px}
+  #resumoSheet .resumo-table th{
+    text-align:left;font-size:8.5px;letter-spacing:.04em;text-transform:uppercase;
+    color:#555;font-weight:700;padding:0 18px 3px 0;border-bottom:1px solid #111;white-space:nowrap;
+  }
+  #resumoSheet .resumo-table td{padding:2.5px 18px 2.5px 0;border-bottom:.5px solid #ddd;white-space:nowrap}
+  #resumoSheet .resumo-table th:last-child,#resumoSheet .resumo-table td:last-child{padding-right:0}
+  #resumoSheet .resumo-table tr:last-child td{border-bottom:none}
+  #resumoSheet .resumo-note{font-size:8px;color:#888;margin-top:3px}
+  #resumoSheet .resumo-empty{font-size:9.5px;color:#888}
+  .resumo-table td.alert{color:#b3261e;font-weight:800}
 }
 
 /* Contador de movimentos fetais / monitor de contrações */
@@ -3933,7 +3961,7 @@ function renderResumoBody(){
   const contrHtml=resumoTable(['Data','Hora','Duração','Intervalo'],contrRows);
 
   body.innerHTML=`
-    <div class="exm-sheet-name">📋 Resumo pra consulta</div>
+    <div class="exm-sheet-name"><span class="no-print">📋 </span>Resumo pra consulta</div>
     <div class="exm-sheet-desc">Gerado em ${fmt(new Date())} · ${currentUser&&currentUser.email?currentUser.email:''}</div>
     <div class="field no-print" style="margin-bottom:4px"><label>Período das tabelas</label>
       <div class="sex-tabs" id="resumoRangeTabs" style="margin-bottom:0">
