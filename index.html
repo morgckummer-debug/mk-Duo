@@ -695,6 +695,42 @@ body::after{
   padding:8px 12px;box-shadow:var(--cs);
 }
 
+/* ── Resumo pra consulta ──
+   Reaproveita o exm-sheet, só que maior (max-width maior, sem limite de
+   altura na impressão) e com uma versão dedicada pra impressão: no print,
+   tudo que não é o resumo some, e o sheet vira um documento normal, sem
+   fundo escuro nem cantos arredondados de bottom-sheet. */
+.resumo-sheet{max-width:600px}
+.resumo-sec{margin-top:20px}
+.resumo-sec:first-child{margin-top:0}
+.resumo-sec-title{
+  font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--ink);
+  margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--surf2);
+}
+.resumo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:13px}
+.resumo-grid dt{color:var(--ink3);font-weight:600}
+.resumo-grid dd{margin:0;color:var(--ink);font-weight:700}
+.resumo-empty{font-size:12.5px;color:var(--ink3);font-style:italic}
+.resumo-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.resumo-table th{
+  text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink3);font-weight:700;padding:0 8px 6px 0;border-bottom:1px solid var(--surf2);
+}
+.resumo-table td{padding:6px 8px 6px 0;border-bottom:1px solid var(--surf2);color:var(--ink)}
+.resumo-table tr:last-child td{border-bottom:none}
+.resumo-table td.alert{color:var(--alert);font-weight:800}
+.resumo-note{font-size:11px;color:var(--ink3);margin-top:6px}
+@media print{
+  body *{visibility:hidden}
+  #resumoSheet, #resumoSheet *{visibility:visible}
+  #resumoSheet{
+    position:absolute;inset:0;max-width:none;max-height:none;overflow:visible;
+    box-shadow:none;border-radius:0;padding:24px;background:#fff;
+  }
+  .no-print{display:none!important}
+  .resumo-table td.alert{color:#b3261e;text-decoration:underline}
+}
+
 /* Contador de movimentos fetais / monitor de contrações */
 .kick-count-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;margin:14px 0 22px}
 .kick-count-num{font-family:'Fraunces',serif;font-size:52px;font-weight:500;color:var(--pd2);line-height:1}
@@ -1465,6 +1501,29 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
         </div>
       </div>
 
+      <div class="card feat" id="glicCard">
+        <button class="mon-head" id="glicHead" type="button" aria-expanded="false">
+          <div class="mon-head-txt">
+            <div class="lbl">🩸 Saúde materna</div>
+            <div class="card-title mon-head-title">Glicemia <span class="serif" style="color:var(--pd);font-style:italic">capilar</span></div>
+            <div class="mon-head-sub" id="glicHeadSub">Nenhum registro ainda</div>
+          </div>
+          <i class="mon-chev" id="glicChev">▾</i>
+        </button>
+        <div class="mon-body" id="glicBody">
+          <div class="helper">Pra quem tem diabetes gestacional ou prévia: registre aqui as medições diárias feitas em casa (jejum e pós-refeição). <span style="color:var(--ink3)">A meta ideal pra você é sempre definida pelo seu obstetra.</span></div>
+          <div id="glicSummaryWrap"></div>
+          <div class="exm-cta" id="glicAddBtn">
+            <div>
+              <div class="exm-cta-txt">🩸 Registrar medição</div>
+              <div class="exm-cta-sub" id="glicLastSub">Nenhum registro ainda</div>
+            </div>
+            <div class="exm-cta-arrow">→</div>
+          </div>
+          <div id="glicHistoryWrap"></div>
+        </div>
+      </div>
+
       <div class="card feat" id="kickCard">
         <button class="mon-head" id="kickHead" type="button" aria-expanded="false">
           <div class="mon-head-txt">
@@ -1505,6 +1564,19 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
             </div>
             <div class="exm-cta-arrow">→</div>
           </div>
+        </div>
+      </div>
+
+      <div class="card feat">
+        <div class="lbl">📋 Pra levar na consulta</div>
+        <div class="card-title">Resumo pro <span class="serif" style="color:var(--pd);font-style:italic">seu obstetra</span></div>
+        <div class="helper">Reúne idade gestacional, corionicidade, crescimento dos bebês, pressão, glicemia, peso, movimentos e contrações numa tela só — pra mostrar ou imprimir na consulta.</div>
+        <div class="exm-cta" id="resumoOpenBtn" style="margin-top:12px">
+          <div>
+            <div class="exm-cta-txt">📋 Ver resumo pra consulta</div>
+            <div class="exm-cta-sub">Pronto pra mostrar na tela ou baixar em PDF</div>
+          </div>
+          <div class="exm-cta-arrow">→</div>
         </div>
       </div>
 
@@ -1825,6 +1897,25 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
   </div>
 </div>
 
+<!-- Registro de glicemia capilar diária -->
+<div class="exm-overlay" id="glicOverlay">
+  <div class="exm-sheet" id="glicSheet">
+    <div class="exm-sheet-handle"></div>
+    <button class="exm-sheet-close" id="glicClose">✕</button>
+    <div id="glicSheetBody"></div>
+  </div>
+</div>
+
+<!-- Resumo pra consulta (tela cheia, com versão de impressão) -->
+<div class="exm-overlay" id="resumoOverlay">
+  <div class="exm-sheet resumo-sheet" id="resumoSheet">
+    <div class="exm-sheet-handle no-print"></div>
+    <button class="exm-sheet-close no-print" id="resumoClose">✕</button>
+    <div id="resumoBody"></div>
+    <button class="kick-tap-btn no-print" id="resumoPrintBtn" type="button" style="margin-top:18px">🖨️ Baixar / imprimir PDF</button>
+  </div>
+</div>
+
 <!-- Bottom Nav -->
 <nav class="bottom-nav">
   <button class="nav-btn on" data-page="calc"><span class="nav-ico">🧮</span><span class="nav-lbl">Calcular</span></button>
@@ -1845,7 +1936,7 @@ let isPremium=false;
 let isTrialActive=false;
 let trialDaysLeft=0;
 let currentUser=null;
-const PREMIUM_ACCORDION_IDS=['weightCard','bpCard','totgCard'];
+const PREMIUM_ACCORDION_IDS=['weightCard','bpCard','totgCard','glicCard'];
 /* E-mails que sempre têm acesso completo, independente de teste grátis
    ou compra na Kiwify — uso pra conta de testes da própria dra. Morgana. */
 const PREMIUM_EMAIL_OVERRIDES=['morgckummer@gmail.com'];
@@ -2285,9 +2376,9 @@ function loadStoredPregnancy(){
 }
 
 document.getElementById('resetPregBtn').addEventListener('click',()=>{
-  const ok=confirm('Isso vai apagar, só neste aparelho, a idade gestacional salva, a corionicidade, o nome e sexo dos bebês, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso, pressão e curva glicêmica — pra você recomeçar do zero em uma nova gestação.\n\nDeseja continuar?');
+  const ok=confirm('Isso vai apagar, só neste aparelho, a idade gestacional salva, a corionicidade, o nome e sexo dos bebês, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso, pressão, curva glicêmica e glicemia diária — pra você recomeçar do zero em uma nova gestação.\n\nDeseja continuar?');
   if(!ok)return;
-  [PREG_KEY,PROFILE_KEY,STORAGE_KEY,EXAM_DONE_KEY,KICK_KEY,CONTR_KEY,ONB_KEY,WEIGHT_KEY,BP_KEY,TOTG_KEY].forEach(k=>{try{localStorage.removeItem(k);}catch{}});
+  [PREG_KEY,PROFILE_KEY,STORAGE_KEY,EXAM_DONE_KEY,KICK_KEY,CONTR_KEY,ONB_KEY,WEIGHT_KEY,BP_KEY,TOTG_KEY,GLIC_KEY].forEach(k=>{try{localStorage.removeItem(k);}catch{}});
   location.reload();
 });
 
@@ -3607,6 +3698,133 @@ document.getElementById('totgClose').addEventListener('click',closeTOTGSheet);
 document.getElementById('totgOverlay').addEventListener('click',e=>{if(e.target.id==='totgOverlay')closeTOTGSheet();});
 renderTOTGCard();
 
+/* ── Glicemia capilar diária ──
+   Diferente do TOTG (exame único), isso é automonitorização: várias
+   medições por dia, todo dia, pra quem já tem diagnóstico de diabetes
+   gestacional ou prévia. Por isso guarda um histórico, igual peso e
+   pressão, em vez de um resultado único. Metas de referência da ADA pra
+   controle diário (não confundir com os cortes diagnósticos do TOTG). */
+const GLIC_KEY='mkcalc_glicemia_v1';
+const GLIC_CUTOFFS={jejum:95,'1h':140,'2h':120};
+const GLIC_CONTEXTS=[{k:'jejum',lbl:'Jejum'},{k:'1h',lbl:'1h pós-refeição'},{k:'2h',lbl:'2h pós-refeição'}];
+function glicCtxLbl(k){return GLIC_CONTEXTS.find(c=>c.k===k)?.lbl||k;}
+function loadGlic(){
+  try{const raw=localStorage.getItem(GLIC_KEY);return raw?JSON.parse(raw):[];}
+  catch{return[];}
+}
+function saveGlic(){
+  try{localStorage.setItem(GLIC_KEY,JSON.stringify(glicEntries));}catch{}
+}
+const glicEntries=loadGlic();
+glicEntries.sort((a,b)=>new Date(a.date)-new Date(b.date));
+function classifyGlic(context,value){
+  const cutoff=GLIC_CUTOFFS[context];
+  if(cutoff!=null&&value>=cutoff)return{lbl:'Acima da meta',tone:'ob'};
+  return{lbl:'Dentro da meta',tone:'normal'};
+}
+function renderGlicSummary(){
+  const wrap=document.getElementById('glicSummaryWrap');
+  const last=glicEntries[glicEntries.length-1];
+  if(!last){wrap.innerHTML='';return;}
+  const cls=classifyGlic(last.context,last.value);
+  wrap.innerHTML=`<div class="wt-stat-grid">
+    <div class="wt-stat"><div class="lbl">Última medição</div><div class="val">${last.value} mg/dL</div></div>
+    <div class="wt-stat"><div class="lbl">${glicCtxLbl(last.context)}</div><div class="bmi-pill tone-${cls.tone}">${cls.lbl}</div></div>
+  </div>`;
+}
+function renderGlicHistory(){
+  const wrap=document.getElementById('glicHistoryWrap');
+  if(!glicEntries.length){wrap.innerHTML='';return;}
+  const items=[...glicEntries].slice(-10).reverse();
+  wrap.innerHTML=`<div class="lbl" style="margin-top:18px">Seus últimos registros</div>`+
+    items.map((g)=>{
+      const realIdx=glicEntries.indexOf(g);
+      const mealTxt=g.meal?` · ${g.meal}`:'';
+      return `<div class="weight-history-item"><span>${fmt(new Date(g.date))} <span class="weight-history-w">· ${fmtClock(new Date(g.date))} · ${glicCtxLbl(g.context)}${mealTxt}</span></span><span style="display:flex;align-items:center;gap:4px"><strong style="color:var(--ink)">${g.value} mg/dL</strong><button class="weight-history-del" data-idx="${realIdx}" type="button" aria-label="Excluir registro">✕</button></span></div>`;
+    }).join('');
+  wrap.querySelectorAll('.weight-history-del').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(!confirm('Excluir esse registro de glicemia?'))return;
+      glicEntries.splice(Number(btn.dataset.idx),1);
+      saveGlic();
+      renderGlicCard();
+    });
+  });
+}
+function renderGlicCard(){
+  const last=glicEntries[glicEntries.length-1];
+  const subTxt=last?`Último registro: ${fmt(new Date(last.date))} · ${last.value} mg/dL`:'Nenhum registro ainda';
+  document.getElementById('glicLastSub').textContent=subTxt;
+  document.getElementById('glicHeadSub').textContent=subTxt;
+  renderGlicSummary();
+  renderGlicHistory();
+}
+let glicCtxSel='jejum';
+function renderGlicSheetBody(){
+  const body=document.getElementById('glicSheetBody');
+  const now=new Date();
+  const todayISO=toISO(TODAY);
+  const nowTime=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  glicCtxSel='jejum';
+  body.innerHTML=`
+    <div class="exm-sheet-name">Registrar glicemia</div>
+    <div class="exm-sheet-desc">Pode registrar a medição de agora ou de um momento anterior que você anotou.</div>
+    <div class="field"><label>Data e horário</label>
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:8px">
+        <input class="inp" type="date" id="glicDateInp" value="${todayISO}" max="${todayISO}">
+        <input class="inp" type="time" id="glicTimeInp" value="${nowTime}">
+      </div>
+    </div>
+    <div class="field"><label>Momento</label>
+      <div class="sex-tabs" id="glicCtxTabs" style="margin-bottom:0">
+        ${GLIC_CONTEXTS.map(c=>`<button class="stab${c.k==='jejum'?' on':''}" type="button" data-ctx="${c.k}">${c.lbl}</button>`).join('')}
+      </div>
+    </div>
+    <div class="field"><label>Refeição (opcional)</label>
+      <input class="inp" type="text" id="glicMealInp" placeholder="Ex: almoço">
+    </div>
+    <div class="field"><label>Glicemia</label>
+      <div class="wt-field-row"><input class="inp" type="number" id="glicValInp" placeholder="Ex: 92" step="1" min="0" inputmode="numeric"><span class="wt-field-unit">mg/dL</span></div>
+    </div>
+    <button class="kick-tap-btn" id="glicSaveBtn" type="button">Salvar registro</button>
+    <button class="kick-cancel-btn" id="glicCancelBtn" type="button">Cancelar</button>`;
+  document.querySelectorAll('#glicCtxTabs .stab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      glicCtxSel=btn.dataset.ctx;
+      document.querySelectorAll('#glicCtxTabs .stab').forEach(b=>b.classList.toggle('on',b===btn));
+    });
+  });
+  document.getElementById('glicSaveBtn').addEventListener('click',()=>{
+    const value=parseInt(document.getElementById('glicValInp').value,10);
+    if(!value||value<=0){showToast('Informe o valor da glicemia',1500);return;}
+    const dateStr=document.getElementById('glicDateInp').value;
+    const timeStr=document.getElementById('glicTimeInp').value;
+    if(!dateStr||!timeStr){showToast('Informe a data e o horário',1500);return;}
+    const entryDate=new Date(`${dateStr}T${timeStr}:00`);
+    if(entryDate.getTime()>Date.now()){showToast('A data/horário não pode ser no futuro',1500);return;}
+    const meal=document.getElementById('glicMealInp').value.trim();
+    glicEntries.push({date:entryDate.toISOString(),context:glicCtxSel,meal:meal||null,value});
+    glicEntries.sort((a,b)=>new Date(a.date)-new Date(b.date));
+    saveGlic();
+    renderGlicCard();
+    closeGlicSheet();
+    showToast('Glicemia registrada',1500);
+  });
+  document.getElementById('glicCancelBtn').addEventListener('click',closeGlicSheet);
+}
+function openGlicSheet(){
+  renderGlicSheetBody();
+  document.getElementById('glicOverlay').classList.add('show');
+  setTimeout(()=>document.getElementById('glicValInp')?.focus(),80);
+}
+function closeGlicSheet(){
+  document.getElementById('glicOverlay').classList.remove('show');
+}
+document.getElementById('glicAddBtn').addEventListener('click',openGlicSheet);
+document.getElementById('glicClose').addEventListener('click',closeGlicSheet);
+document.getElementById('glicOverlay').addEventListener('click',e=>{if(e.target.id==='glicOverlay')closeGlicSheet();});
+renderGlicCard();
+
 /* Cabeçalhos comprimidos dos cards de monitoramento (peso, pressão, movimentos,
    contrações) — clique abre/fecha o card inteiro, fechado por padrão. */
 function initMonToggle(headId,bodyId,chevId,premiumCardId){
@@ -3621,8 +3839,128 @@ function initMonToggle(headId,bodyId,chevId,premiumCardId){
 initMonToggle('weightHead','weightBody','weightChev','weightCard');
 initMonToggle('bpHead','bpBody','bpChev','bpCard');
 initMonToggle('totgHead','totgBody','totgChev','totgCard');
+initMonToggle('glicHead','glicBody','glicChev','glicCard');
 initMonToggle('kickHead','kickBody','kickChev');
 initMonToggle('contrHead','contrBody','contrChev');
+
+/* ── Resumo pra consulta ──
+   Compila num documento só (com opção de imprimir/baixar em PDF) o que a
+   gestante mostraria pro obstetra: gestação, crescimento dos bebês, pressão,
+   glicemia, peso, movimentos e contrações. De propósito NÃO inclui cronograma
+   de exames — não é papel do app sugerir conduta pro médico assistente.
+   As tabelas respeitam o período escolhido (7/15/30 dias ou tudo); peso,
+   pressão e glicemia destacam valores fora da meta. */
+const CHOR_NAMES={dcda:'Dicoriônica / Diamniótica',mcda:'Monocoriônica / Diamniótica',mcma:'Monocoriônica / Monoamniótica'};
+let resumoRangeDays=15;
+function filterByPeriod(entries,days,dateField){
+  if(!days)return entries;
+  const cutoff=Date.now()-days*86400000;
+  return entries.filter(e=>new Date(e[dateField]).getTime()>=cutoff);
+}
+function resumoTable(headers,rows){
+  if(!rows.length)return `<div class="resumo-empty">Nenhum registro nesse período.</div>`;
+  return `<table class="resumo-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+}
+function renderResumoBody(){
+  const body=document.getElementById('resumoBody');
+  const saved=loadPregnancy();
+  const rangeLbl=resumoRangeDays?`últimos ${resumoRangeDays} dias`:'todo o histórico';
+
+  let gestHtml='<div class="resumo-empty">Nenhum cálculo de idade gestacional ainda.</div>';
+  if(currentIG&&saved){
+    const dpp=dppFromLMP(saved.lmp);
+    const chorName=profile.chorionicity?CHOR_NAMES[profile.chorionicity]:null;
+    const surv=profile.chorionicity?SURV_COPY[profile.chorionicity]:null;
+    gestHtml=`<dl class="resumo-grid">
+      <dt>Idade gestacional</dt><dd>${formatWeeksText(currentIG.weeks,currentIG.days)}</dd>
+      <dt>DPP</dt><dd>${fmt(dpp)}</dd>
+      <dt>Método</dt><dd>${saved.method}</dd>
+      <dt>Corionicidade</dt><dd>${chorName||'Não informada'}</dd>
+    </dl>${surv?`<div class="resumo-note">${surv.html.replace(/^[🟢🟠🔴]\s*/u,'')}</div>`:''}`;
+  }
+
+  const femurA=document.getElementById('femurInpA').value;
+  const femurB=document.getElementById('femurInpB').value;
+  const weA=document.getElementById('weightEstInpA').value;
+  const weB=document.getElementById('weightEstInpB').value;
+  const disc=computeDiscordance();
+  const hasBabyData=femurA||femurB||weA||weB;
+  const babiesHtml=hasBabyData?`<dl class="resumo-grid">
+      <dt>${profile.name||'Bebê A'} — fêmur</dt><dd>${femurA?femurA+' cm':'—'}</dd>
+      <dt>${profile.name||'Bebê A'} — peso estimado</dt><dd>${weA?weA+' g':'—'}</dd>
+      <dt>${profile.babyB.name||'Bebê B'} — fêmur</dt><dd>${femurB?femurB+' cm':'—'}</dd>
+      <dt>${profile.babyB.name||'Bebê B'} — peso estimado</dt><dd>${weB?weB+' g':'—'}</dd>
+      ${disc?`<dt>Discordância de crescimento</dt><dd>${Math.round(disc.diffG)} g · ${disc.pct.toFixed(1)}%</dd>`:''}
+    </dl><div class="resumo-note">Valores da última medição informada no app (não fica salvo de uma visita pra outra — confira se está atualizado antes de mostrar).</div>`
+    :'<div class="resumo-empty">Nenhum fêmur/peso estimado informado ainda.</div>';
+
+  const wEntries=filterByPeriod(weightEntries,resumoRangeDays,'date');
+  const weightRows=[...wEntries].reverse().map(w=>`<tr><td>${fmt(new Date(w.date))}</td><td>${fmtKg(w.kg)}</td></tr>`);
+  const weightHtml=resumoTable(['Data','Peso'],weightRows);
+
+  const bpFiltered=filterByPeriod(bpEntries,resumoRangeDays,'date');
+  const bpRows=[...bpFiltered].reverse().map(b=>{
+    const cls=classifyBP(b.sys,b.dia);
+    const alert=cls.tone==='over'||cls.tone==='ob';
+    return `<tr><td>${fmt(new Date(b.date))}</td><td>${fmtClock(new Date(b.date))}</td><td${alert?' class="alert"':''}>${fmtBP(b.sys,b.dia)}</td></tr>`;
+  });
+  const bpHtml=resumoTable(['Data','Hora','PA'],bpRows)+'<div class="resumo-note">Destacado: sistólica ≥140 ou diastólica ≥90 mmHg.</div>';
+
+  const glicFiltered=filterByPeriod(glicEntries,resumoRangeDays,'date');
+  const glicRows=[...glicFiltered].reverse().map(g=>{
+    const alert=classifyGlic(g.context,g.value).tone==='ob';
+    return `<tr><td>${fmt(new Date(g.date))}</td><td>${fmtClock(new Date(g.date))}</td><td>${glicCtxLbl(g.context)}${g.meal?` (${g.meal})`:''}</td><td${alert?' class="alert"':''}>${g.value} mg/dL</td></tr>`;
+  });
+  const glicHtml=resumoTable(['Data','Hora','Momento','Valor'],glicRows)+'<div class="resumo-note">Destacado: jejum ≥95, 1h pós-refeição ≥140 ou 2h pós-refeição ≥120 mg/dL.</div>';
+
+  const kickFiltered=filterByPeriod(kickSessions,resumoRangeDays,'date');
+  const kickRows=[...kickFiltered].reverse().map(k=>`<tr><td>${fmt(new Date(k.date))}</td><td>${fmtClock(new Date(k.date))}</td><td>${fmtKickDuration(k.ms)} para 10 movimentos</td></tr>`);
+  const kickHtml=resumoTable(['Data','Hora','Duração'],kickRows);
+
+  const contrFiltered=filterByPeriod(contractions,resumoRangeDays,'start');
+  const contrRows=[...contrFiltered].reverse().map(c=>`<tr><td>${fmt(new Date(c.start))}</td><td>${fmtClock(new Date(c.start))}</td><td>${fmtKickDuration(c.ms)}</td><td>${fmtGap(c.gapMs)}</td></tr>`);
+  const contrHtml=resumoTable(['Data','Hora','Duração','Intervalo'],contrRows);
+
+  body.innerHTML=`
+    <div class="exm-sheet-name">📋 Resumo pra consulta</div>
+    <div class="exm-sheet-desc">Gerado em ${fmt(new Date())} · ${currentUser&&currentUser.email?currentUser.email:''}</div>
+    <div class="field no-print" style="margin-bottom:4px"><label>Período das tabelas</label>
+      <div class="sex-tabs" id="resumoRangeTabs" style="margin-bottom:0">
+        <button class="stab${resumoRangeDays===7?' on':''}" type="button" data-days="7">7 dias</button>
+        <button class="stab${resumoRangeDays===15?' on':''}" type="button" data-days="15">15 dias</button>
+        <button class="stab${resumoRangeDays===30?' on':''}" type="button" data-days="30">30 dias</button>
+        <button class="stab${resumoRangeDays===0?' on':''}" type="button" data-days="0">Tudo</button>
+      </div>
+    </div>
+    <div class="resumo-note" style="margin-bottom:14px">Período das tabelas: ${rangeLbl}.</div>
+
+    <div class="resumo-sec"><div class="resumo-sec-title">Gestação</div>${gestHtml}</div>
+    <div class="resumo-sec"><div class="resumo-sec-title">Crescimento dos bebês</div>${babiesHtml}</div>
+    <div class="resumo-sec"><div class="resumo-sec-title">Peso materno</div>${weightHtml}</div>
+    <div class="resumo-sec"><div class="resumo-sec-title">Pressão arterial</div>${bpHtml}</div>
+    <div class="resumo-sec"><div class="resumo-sec-title">Glicemia capilar</div>${glicHtml}</div>
+    <div class="resumo-sec"><div class="resumo-sec-title">Movimentos fetais</div>${kickHtml}</div>
+    <div class="resumo-sec"><div class="resumo-sec-title">Contrações</div>${contrHtml}</div>`;
+
+  document.querySelectorAll('#resumoRangeTabs .stab').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      resumoRangeDays=Number(btn.dataset.days);
+      renderResumoBody();
+    });
+  });
+}
+function openResumoSheet(){
+  if(!isPremium){openPremiumModal();return;}
+  renderResumoBody();
+  document.getElementById('resumoOverlay').classList.add('show');
+}
+function closeResumoSheet(){
+  document.getElementById('resumoOverlay').classList.remove('show');
+}
+document.getElementById('resumoOpenBtn').addEventListener('click',openResumoSheet);
+document.getElementById('resumoClose').addEventListener('click',closeResumoSheet);
+document.getElementById('resumoOverlay').addEventListener('click',e=>{if(e.target.id==='resumoOverlay')closeResumoSheet();});
+document.getElementById('resumoPrintBtn').addEventListener('click',()=>window.print());
 
 /* ── Tutorial de boas-vindas (aparece na 1ª visita, revisitável pelo ❔) ── */
 const ONB_KEY='mkcalc_onboarded';
