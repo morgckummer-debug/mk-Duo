@@ -1271,6 +1271,11 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
       <div class="baby-card" id="babyCard">
         <div class="lbl" id="babyWeekLbl">Bebê</div>
         <div class="card-title serif" id="babyFruit">—</div>
+        <div class="baby-orb-wrap">
+          <div class="baby-orb">
+            <img class="baby-orb-img" id="babyFruitImgCenter" src="" alt="" onerror="this.src='frutas/semente.png'">
+          </div>
+        </div>
         <div class="duo-badges hidden" id="duoBadges">
           <span class="duo-badge" id="duoBadgeA">🩵 Bebê A</span>
           <span class="duo-badge" id="duoBadgeB">🩷 Bebê B</span>
@@ -1279,11 +1284,6 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
         <div class="baby-diptych" id="babyDiptych">
           <div class="baby-half baby-half-a">
             <span class="baby-mono hidden" id="babyMonoA">A</span>
-            <div class="baby-orb-wrap">
-              <div class="baby-orb">
-                <img class="baby-orb-img" id="babyFruitImg" src="" alt="" onerror="this.src='frutas/semente.png'">
-              </div>
-            </div>
             <div class="baby-half-lbl hidden" id="babyHalfLblA">Bebê A</div>
             <div class="femur-calc">
               <div class="femur-title">Quer saber a altura do bebê?</div>
@@ -1304,11 +1304,6 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
 
           <div class="baby-half baby-half-b" id="babyHalfB">
             <span class="baby-mono" id="babyMonoB">B</span>
-            <div class="baby-orb-wrap">
-              <div class="baby-orb">
-                <img class="baby-orb-img" id="babyFruitImgB" src="" alt="" onerror="this.src='frutas/semente.png'">
-              </div>
-            </div>
             <div class="baby-half-lbl" id="babyHalfLblB">Bebê B</div>
             <div class="femur-calc">
               <div class="femur-title">Quer saber a altura do bebê?</div>
@@ -2110,17 +2105,19 @@ function updateBabyLabels(ig){
   document.getElementById('babyFruit').textContent=fruit.name;
   document.getElementById('babyDev').textContent=milestone.d;
 
+  // Um único card de fruta central — os dois bebês estão na mesma semana,
+  // então têm o mesmo tamanho de referência (o que difere entre eles é
+  // só o fêmur/peso estimado, medidos separadamente mais abaixo).
+  document.getElementById('babyFruitImgCenter').src=`frutas/${fruit.file}.png`;
+  document.getElementById('babyFruitImgCenter').alt=fruit.name;
+
   // Bebê A (também usado como bebê único em gestação não-gemelar)
-  document.getElementById('babyFruitImg').src=`frutas/${fruit.file}.png`;
-  document.getElementById('babyFruitImg').alt=fruit.name;
   document.getElementById('babyMonoA').classList.toggle('hidden',!profile.twins);
   document.getElementById('babyHalfLblA').classList.toggle('hidden',!profile.twins);
   document.getElementById('babyHalfLblA').textContent=profile.name||'Bebê A';
   document.querySelector('.baby-half-a').className='baby-half baby-half-a'+(profile.twins&&profile.sex?' sex-'+profile.sex:'');
 
   // Bebê B (só existe em gestação gemelar)
-  document.getElementById('babyFruitImgB').src=`frutas/${fruit.file}.png`;
-  document.getElementById('babyFruitImgB').alt=fruit.name;
   document.getElementById('babyHalfLblB').textContent=profile.babyB.name||'Bebê B';
   document.getElementById('babyHalfB').className='baby-half baby-half-b'+(profile.babyB.sex?' sex-'+profile.babyB.sex:'');
 
