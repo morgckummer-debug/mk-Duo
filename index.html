@@ -216,6 +216,34 @@ body::after{
    o navegador aplicava sua cor nativa de botão em vez do tom da paleta. */
 .card-title{font-family:'Fraunces',serif;font-size:24px;font-weight:500;letter-spacing:-.02em;line-height:1.1;margin-bottom:18px;color:var(--ink);transition:color .3s}
 
+/* ── Bloqueio Premium ──
+   Dois estilos: (1) "blur" pros cards que mostram um preview de conteúdo
+   real (discordância de crescimento, cronograma por corionicidade) — o
+   conteúdo fica borrado atrás de um overlay com CTA; (2) "accordion-locked"
+   pros cards de monitoramento (peso/pressão/glicemia), que já ficam
+   fechados por padrão — só troca o chevron por um cadeado e o clique no
+   cabeçalho abre o modal de venda em vez de expandir. */
+.premium-locked{position:relative;overflow:hidden}
+.premium-locked > *:not(.premium-overlay){filter:blur(5px);pointer-events:none;user-select:none;opacity:.6}
+.premium-overlay{
+  position:absolute;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;
+  background:rgba(248,237,217,.4);cursor:pointer;border-radius:inherit;padding:10px;
+}
+[data-dark] .premium-overlay{background:rgba(30,24,18,.45)}
+.premium-overlay-inner{
+  display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;
+  padding:14px 18px;background:var(--surfs);border-radius:var(--r);box-shadow:var(--cs);max-width:220px;
+}
+.premium-lock-ico{font-size:20px}
+.premium-overlay-title{font-family:'Fraunces',serif;font-size:15px;color:var(--ink);font-weight:500}
+.premium-overlay-sub{font-size:11px;color:var(--ink2);line-height:1.4}
+.premium-overlay-btn{
+  margin-top:4px;border:none;border-radius:var(--pill);background:var(--pd2);color:#fff;
+  font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;padding:8px 16px;cursor:pointer;box-shadow:var(--cs);
+}
+.premium-accordion-locked .mon-head-sub{opacity:.75}
+.premium-refresh-btn{text-align:center;margin-top:10px;font-size:12.5px;color:var(--ink2);text-decoration:underline;cursor:pointer}
+
 /* ── Cards de monitoramento comprimidos (peso, movimentos, contrações) ──
    Ficam fechados por padrão, mostrando só um resumo de uma linha; tocar no
    cabeçalho abre o card inteiro, igual ao acordeão da Checklist. */
@@ -1096,9 +1124,31 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
-<div id="app">
+<!-- ── Tela de login / criar conta (Supabase Auth) ──
+     Fica na frente de tudo até a usuária entrar. Depois disso o #app
+     aparece normalmente. -->
+<div class="onb-overlay show" id="authOverlay">
+  <div class="onb-sheet" style="max-width:340px">
+    <div class="onb-ico">🤍</div>
+    <div class="onb-title" id="authTitle">Entrar no MK-Duo</div>
+    <div class="onb-desc" id="authDesc">Crie sua conta pra guardar os dados da sua gestação com segurança — mesmo se trocar de celular.</div>
+    <div class="field" style="text-align:left">
+      <label>E-mail</label>
+      <input class="inp" type="email" id="authEmail" placeholder="seuemail@exemplo.com" autocomplete="email">
+    </div>
+    <div class="field" style="text-align:left">
+      <label>Senha</label>
+      <input class="inp" type="password" id="authPassword" placeholder="Mínimo 6 caracteres" autocomplete="current-password">
+    </div>
+    <div id="authError" style="color:var(--alert);font-size:12.5px;margin-bottom:10px;display:none"></div>
+    <button class="btn-calc" id="authSubmitBtn" style="margin-bottom:10px">Entrar</button>
+    <button class="onb-skip" id="authToggleMode" style="width:100%">Ainda não tenho conta — criar agora</button>
+  </div>
+</div>
+<div id="app" style="display:none">
   <div class="hdr">
     <div class="brand serif">MK<span>Duo</span></div>
     <div class="hdr-actions">
@@ -1571,6 +1621,13 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
     </div>
 
     <div class="card">
+      <div class="lbl">Conta</div>
+      <div class="card-title" style="font-size:17px">Sua <span class="serif" style="color:var(--pd);font-style:italic">conta</span></div>
+      <div class="helper">Seus dados ficam salvos com segurança, mesmo se você trocar de celular.</div>
+      <button class="btn-danger" id="logoutBtn">Sair da conta</button>
+    </div>
+
+    <div class="card">
       <div class="lbl">Nova gestação</div>
       <div class="card-title" style="font-size:17px">Começando <span class="serif" style="color:var(--pd);font-style:italic">tudo de novo?</span></div>
       <div class="helper">Isso apaga, só neste aparelho, a idade gestacional salva, a corionicidade, o nome e sexo dos bebês, os exames marcados, a checklist, os movimentos, as contrações e os registros de peso, pressão e curva glicêmica — pra você recomeçar do zero em uma nova gestação.</div>
@@ -1628,6 +1685,28 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
 </div>
 
 <!-- Exame detail sheet -->
+<div class="exm-overlay" id="premiumOverlay">
+  <div class="exm-sheet" id="premiumSheet">
+    <div class="exm-sheet-handle"></div>
+    <button class="exm-sheet-close" id="premiumClose">✕</button>
+    <div class="exm-sheet-name">✨ MK-Duo Premium</div>
+    <div class="exm-sheet-desc">Desbloqueie o acompanhamento completo da sua gestação gemelar: discordância de crescimento entre os bebês, cronograma de exames adaptado à corionicidade e monitoramento de peso, pressão e curva glicêmica.</div>
+    <ul class="exm-sheet-items">
+      <li>👯 Discordância de crescimento entre os bebês</li>
+      <li>🩺 Cronograma de exames por corionicidade</li>
+      <li>⚖️ Peso, pressão e curva glicêmica</li>
+    </ul>
+    <div class="exm-cta" id="premiumBuyBtn">
+      <div>
+        <div class="exm-cta-txt">Desbloquear Premium</div>
+        <div class="exm-cta-sub">Pagamento único · R$ 29,90</div>
+      </div>
+      <div class="exm-cta-arrow">→</div>
+    </div>
+    <div class="premium-refresh-btn" id="premiumRefreshBtn">Já comprei — verificar acesso</div>
+  </div>
+</div>
+
 <div class="exm-overlay" id="exmOverlay">
   <div class="exm-sheet" id="exmSheet">
     <div class="exm-sheet-handle"></div>
@@ -1692,6 +1771,13 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
 </nav>
 
 <script>
+/* ── Premium (Kiwify + Supabase) ── declarado logo no topo porque
+   renderExamGuide()/renderDiscordance() já chamam applyPremiumGate()
+   durante o carregamento inicial do script. */
+const KIWIFY_CHECKOUT_URL='https://pay.kiwify.com.br/b85PKkf';
+let isPremium=false;
+const PREMIUM_ACCORDION_IDS=['weightCard','bpCard','totgCard'];
+
 const TODAY = new Date();
 const fmt = d => {
   const m=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
@@ -2038,11 +2124,13 @@ document.getElementById('babyNameInp').addEventListener('input',e=>{
   profile.name=e.target.value;
   saveProfile();
   updateBabyNameUI();
+  syncPregnancyToCloud();
 });
 document.getElementById('babyNameInpB').addEventListener('input',e=>{
   profile.babyB.name=e.target.value;
   saveProfile();
   updateBabyNameUI();
+  syncPregnancyToCloud();
 });
 /* Mostra um toast só quando o sexo dos dois bebês já definido muda o tema de
    acento (ver applyProfileTheme) — silencioso enquanto falta informar um dos
@@ -2063,6 +2151,7 @@ document.querySelectorAll('#sexTabs .stab').forEach(btn=>{
     updateBabyNameUI();
     renderKickCard();
     toastBabyTheme();
+    syncPregnancyToCloud();
   });
 });
 document.querySelectorAll('#sexTabsB .stab').forEach(btn=>{
@@ -2073,6 +2162,7 @@ document.querySelectorAll('#sexTabsB .stab').forEach(btn=>{
     applyProfileTheme();
     updateBabyNameUI();
     toastBabyTheme();
+    syncPregnancyToCloud();
   });
 });
 document.querySelectorAll('#chorList .chor-card').forEach(card=>{
@@ -2081,6 +2171,7 @@ document.querySelectorAll('#chorList .chor-card').forEach(card=>{
     saveProfile();
     renderProfileUI();
     renderExamGuide();
+    syncPregnancyToCloud();
   });
 });
 applyProfileTheme();
@@ -2199,6 +2290,7 @@ function renderDiscordance(){
   const card=document.getElementById('discordCard');
   if(!profile.twins||!currentIG||currentIG.weeks<=20){card.classList.add('hidden');return;}
   card.classList.remove('hidden');
+  applyPremiumGate();
   const d=computeDiscordance();
   if(!d){
     document.getElementById('discordVal').textContent='—';
@@ -2279,7 +2371,7 @@ function runCalc(){
     showToast('Essa data resulta em mais de 42 semanas de gestação. Confira a data informada.',3000);
     return;
   }
-  if(ig&&dpp){savePregnancy(ig.lmp,method);renderPregResult(ig,dpp,method);goResult();resumeOnboardingAfterCalc();}
+  if(ig&&dpp){savePregnancy(ig.lmp,method);syncPregnancyToCloud();renderPregResult(ig,dpp,method);goResult();resumeOnboardingAfterCalc();}
 }
 
 function goResult(){goToPage('result');}
@@ -2532,11 +2624,13 @@ function renderExamGuide(){
   });
   document.querySelectorAll('.exm-card').forEach(card=>{
     card.addEventListener('click',()=>{
+      if(card.closest('#exmTwinCard')&&!isPremium){openPremiumModal();return;}
       const list=lists[card.dataset.cat];
       const idx=+card.dataset.idx;
       openExamDetail(list[idx],`${card.dataset.cat}-${idx}`);
     });
   });
+  applyPremiumGate();
 }
 renderExamGuide();
 
@@ -3441,17 +3535,18 @@ renderTOTGCard();
 
 /* Cabeçalhos comprimidos dos cards de monitoramento (peso, pressão, movimentos,
    contrações) — clique abre/fecha o card inteiro, fechado por padrão. */
-function initMonToggle(headId,bodyId,chevId){
+function initMonToggle(headId,bodyId,chevId,premiumCardId){
   document.getElementById(headId).addEventListener('click',()=>{
+    if(premiumCardId&&!isPremium){openPremiumModal();return;}
     const body=document.getElementById(bodyId);
     const open=body.classList.toggle('open');
     document.getElementById(chevId).textContent=open?'▴':'▾';
     document.getElementById(headId).setAttribute('aria-expanded',open?'true':'false');
   });
 }
-initMonToggle('weightHead','weightBody','weightChev');
-initMonToggle('bpHead','bpBody','bpChev');
-initMonToggle('totgHead','totgBody','totgChev');
+initMonToggle('weightHead','weightBody','weightChev','weightCard');
+initMonToggle('bpHead','bpBody','bpChev','bpCard');
+initMonToggle('totgHead','totgBody','totgChev','totgCard');
 initMonToggle('kickHead','kickBody','kickChev');
 initMonToggle('contrHead','contrBody','contrChev');
 
@@ -3512,6 +3607,226 @@ document.getElementById('onbHelpBtn').addEventListener('click',openOnboarding);
 if(!localStorage.getItem(ONB_KEY))openOnboarding();
 
 loadStoredPregnancy();
+/* ══════════════════════════════════════════════════════════════
+   Supabase — conta da usuária + sincronização em nuvem
+   ══════════════════════════════════════════════════════════════
+   Por enquanto, só os dados "de identidade" da gestação sincronizam
+   com a nuvem: corionicidade, nomes/sexo dos bebês, data base (DUM/
+   USG/DPP) e método. O resto (checklist, movimentos, contrações,
+   peso, pressão, curva glicêmica) continua só no localStorage deste
+   aparelho por enquanto — migramos em uma etapa seguinte.
+   Isso já resolve o principal: se a gestante trocar de celular ou
+   limpar o navegador, o essencial da gestação não se perde, e no
+   futuro dá pra checar aqui se ela tem assinatura ativa. */
+const SUPABASE_URL='https://mxuywcfgetpoxcujzxip.supabase.co';
+const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14dXl3Y2ZnZXRwb3hjdWp6eGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4ODkzNDYsImV4cCI6MjEwMjQ2NTM0Nn0.msNw6eQiduWZkjwo4DyV5tTkP_X7gSdUY0PUb5AkyL0';
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+
+let authMode='signin'; // 'signin' ou 'signup'
+let currentUser=null;
+
+function showAuthError(msg){
+  const el=document.getElementById('authError');
+  el.textContent=msg;
+  el.style.display='block';
+}
+function hideAuthError(){
+  document.getElementById('authError').style.display='none';
+}
+function setAuthMode(mode){
+  authMode=mode;
+  hideAuthError();
+  if(mode==='signup'){
+    document.getElementById('authTitle').textContent='Criar minha conta';
+    document.getElementById('authDesc').textContent='Leva menos de um minuto. Seus dados ficam salvos com segurança e você não perde nada trocando de aparelho.';
+    document.getElementById('authSubmitBtn').textContent='Criar conta';
+    document.getElementById('authToggleMode').textContent='Já tenho conta — entrar';
+  }else{
+    document.getElementById('authTitle').textContent='Entrar no MK-Duo';
+    document.getElementById('authDesc').textContent='Crie sua conta pra guardar os dados da sua gestação com segurança — mesmo se trocar de celular.';
+    document.getElementById('authSubmitBtn').textContent='Entrar';
+    document.getElementById('authToggleMode').textContent='Ainda não tenho conta — criar agora';
+  }
+}
+document.getElementById('authToggleMode').addEventListener('click',()=>{
+  setAuthMode(authMode==='signin'?'signup':'signin');
+});
+
+async function handleAuthSubmit(){
+  hideAuthError();
+  const email=document.getElementById('authEmail').value.trim();
+  const password=document.getElementById('authPassword').value;
+  if(!email||!password){showAuthError('Preencha e-mail e senha.');return;}
+  if(password.length<6){showAuthError('A senha precisa ter pelo menos 6 caracteres.');return;}
+  const btn=document.getElementById('authSubmitBtn');
+  btn.disabled=true;btn.style.opacity='.6';
+  try{
+    if(authMode==='signup'){
+      const{data,error}=await sb.auth.signUp({email,password});
+      if(error)throw error;
+      currentUser=data.user;
+    }else{
+      const{data,error}=await sb.auth.signInWithPassword({email,password});
+      if(error)throw error;
+      currentUser=data.user;
+    }
+    await onLoginSuccess();
+  }catch(err){
+    const msgMap={
+      'Invalid login credentials':'E-mail ou senha incorretos.',
+      'User already registered':'Esse e-mail já tem uma conta — tenta entrar em vez de criar.'
+    };
+    showAuthError(msgMap[err.message]||('Não deu certo: '+err.message));
+  }finally{
+    btn.disabled=false;btn.style.opacity='1';
+  }
+}
+document.getElementById('authSubmitBtn').addEventListener('click',handleAuthSubmit);
+document.getElementById('authPassword').addEventListener('keydown',e=>{if(e.key==='Enter')handleAuthSubmit();});
+
+/* Busca os dados salvos na nuvem (se existirem) e aplica no app,
+   sobrescrevendo o que estiver no localStorage deste aparelho —
+   a nuvem é sempre a fonte mais confiável depois do login. */
+async function loadPregnancyFromCloud(){
+  const{data,error}=await sb.from('pregnancies').select('*').eq('user_id',currentUser.id).maybeSingle();
+  if(error||!data)return;
+  profile.chorionicity=data.chorionicity||null;
+  profile.name=data.baby_a_name||'';
+  profile.sex=data.baby_a_sex||'';
+  profile.babyB.name=data.baby_b_name||'';
+  profile.babyB.sex=data.baby_b_sex||'';
+  saveProfile();
+  if(data.lmp_date){
+    savePregnancy(new Date(data.lmp_date+'T12:00:00'),data.method||'DUM');
+  }
+}
+
+/* Grava (cria ou atualiza) a linha da gestação na nuvem. Chamada
+   sempre que a usuária altera corionicidade, nomes, sexo ou a data
+   base — pra ficar sempre sincronizado sem ela precisar "salvar". */
+async function syncPregnancyToCloud(){
+  if(!currentUser)return;
+  const saved=loadPregnancy();
+  await sb.from('pregnancies').upsert({
+    user_id:currentUser.id,
+    twins:true,
+    chorionicity:profile.chorionicity,
+    lmp_date:saved?saved.lmp:null,
+    method:saved?saved.method:null,
+    baby_a_name:profile.name,
+    baby_a_sex:profile.sex,
+    baby_b_name:profile.babyB.name,
+    baby_b_sex:profile.babyB.sex,
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+}
+
+document.getElementById('logoutBtn').addEventListener('click',async()=>{
+  const ok=confirm('Sair da conta? Você precisa entrar de novo com seu e-mail e senha pra acessar seus dados.');
+  if(!ok)return;
+  await sb.auth.signOut();
+  location.reload();
+});
+
+/* Lê o status na tabela `subscriptions` (preenchida pelo webhook da
+   Kiwify assim que o pagamento é aprovado) pra decidir o que mostrar
+   liberado ou bloqueado. */
+async function checkPremiumStatus(){
+  if(!currentUser){isPremium=false;return;}
+  try{
+    const{data,error}=await sb.from('subscriptions').select('status').eq('user_id',currentUser.id).maybeSingle();
+    isPremium=!error&&!!data&&data.status==='active';
+  }catch(e){
+    isPremium=false;
+  }
+}
+
+function ensurePremiumOverlay(el,compact){
+  if(el.querySelector(':scope > .premium-overlay'))return;
+  const ov=document.createElement('div');
+  ov.className='premium-overlay';
+  ov.innerHTML=`<div class="premium-overlay-inner">
+      <div class="premium-lock-ico">🔒</div>
+      <div class="premium-overlay-title">Recurso Premium</div>
+      ${compact?'':'<div class="premium-overlay-sub">Desbloqueie esse acompanhamento com um pagamento único.</div>'}
+      <button class="premium-overlay-btn" type="button">Desbloquear</button>
+    </div>`;
+  ov.addEventListener('click',e=>{e.stopPropagation();openPremiumModal();});
+  el.appendChild(ov);
+}
+
+/* Aplica (ou remove) o bloqueio visual em todos os pontos premium do app.
+   Chamada no login, depois de checar o status, e de novo sempre que os
+   cards em questão são re-renderizados (discordância, cronograma). */
+function applyPremiumGate(){
+  PREMIUM_ACCORDION_IDS.forEach(id=>{
+    const card=document.getElementById(id);
+    const chev=document.getElementById(id.replace('Card','Chev'));
+    if(!card)return;
+    card.classList.toggle('premium-accordion-locked',!isPremium);
+    if(chev&&!document.getElementById(id.replace('Card','Body')).classList.contains('open')){
+      chev.textContent=isPremium?'▾':'🔒';
+    }
+  });
+  const twin=document.getElementById('exmTwinCard');
+  if(twin){
+    twin.classList.toggle('premium-locked',!isPremium);
+    if(!isPremium)ensurePremiumOverlay(twin);
+  }
+  const discord=document.getElementById('discordCard');
+  if(discord){
+    discord.classList.toggle('premium-locked',!isPremium);
+    if(!isPremium)ensurePremiumOverlay(discord,true);
+  }
+}
+
+function openPremiumModal(){
+  document.getElementById('premiumOverlay').classList.add('show');
+}
+function closePremiumModal(){
+  document.getElementById('premiumOverlay').classList.remove('show');
+}
+document.getElementById('premiumClose').addEventListener('click',closePremiumModal);
+document.getElementById('premiumOverlay').addEventListener('click',e=>{if(e.target.id==='premiumOverlay')closePremiumModal();});
+document.getElementById('premiumBuyBtn').addEventListener('click',()=>{
+  const emailParam=currentUser&&currentUser.email?`?email=${encodeURIComponent(currentUser.email)}`:'';
+  window.open(KIWIFY_CHECKOUT_URL+emailParam,'_blank');
+});
+document.getElementById('premiumRefreshBtn').addEventListener('click',async()=>{
+  showToast('Verificando pagamento…',1200);
+  await checkPremiumStatus();
+  applyPremiumGate();
+  if(isPremium){
+    showToast('Premium liberado! 🎉',2200);
+    closePremiumModal();
+  }else{
+    showToast('Ainda não identificamos o pagamento. Aguarde alguns segundos e tente de novo.',3200);
+  }
+});
+
+async function onLoginSuccess(){
+  await loadPregnancyFromCloud();
+  await checkPremiumStatus();
+  document.getElementById('authOverlay').classList.remove('show');
+  document.getElementById('app').style.display='';
+  // Reaplica a UI com os dados que vieram (ou não) da nuvem
+  applyProfileTheme();
+  renderProfileUI();
+  updateBabyNameUI();
+  loadStoredPregnancy();
+  applyPremiumGate();
+}
+
+/* Verifica, ao abrir o app, se já existe uma sessão ativa (usuária
+   já tinha feito login antes nesse navegador) — se sim, pula a tela
+   de login direto. */
+(async function checkExistingSession(){
+  const{data}=await sb.auth.getSession();
+  if(data.session){
+    currentUser=data.session.user;
+    await onLoginSuccess();
+  }
+})();
 </script>
 </body>
 </html>
