@@ -701,74 +701,85 @@ body::after{
    tudo que não é o resumo some, e o sheet vira um documento normal, sem
    fundo escuro nem cantos arredondados de bottom-sheet. */
 .resumo-sheet{max-width:600px}
+
+/* Timbre: wordmark do app + metadados de geração, igual ao cabeçalho do app */
+.resumo-mast{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.resumo-brand{font-family:'Fraunces',serif;font-size:19px;font-weight:500;color:var(--ink)}
+.resumo-brand span{color:var(--pd2)}
+.resumo-mast-meta{font-size:10.5px;color:var(--ink3);text-align:right;line-height:1.5}
+
+/* Card de destaque com a idade gestacional — igual ao clima do card
+   principal da aba Resultado, só que compacto pra caber no resumo. */
+.resumo-hero{
+  background:linear-gradient(155deg,var(--peach) 0%,var(--rose) 100%);
+  border-radius:var(--r);padding:20px 22px;margin-bottom:18px;box-shadow:var(--cs);
+}
+.resumo-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pd2)}
+.resumo-hero-title{
+  font-family:'Fraunces',serif;font-size:22px;font-weight:500;color:var(--ink);
+  line-height:1.2;margin:6px 0 16px;text-wrap:balance;
+}
+.resumo-hero-title em{font-style:italic;color:var(--pd2)}
+.resumo-hero-stats{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}
+.rhs-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);opacity:.8;margin-bottom:2px}
+.rhs-val{font-size:13.5px;font-weight:700;color:var(--ink)}
+.resumo-chor-pill{display:inline-block;font-size:11.5px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.55);border-radius:var(--pill);padding:6px 12px}
+
 .resumo-sec{margin-top:20px}
 .resumo-sec:first-child{margin-top:0}
 .resumo-sec-title{
   font-family:'Fraunces',serif;font-size:15px;font-weight:500;color:var(--ink);
   margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--surf2);
 }
-.resumo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;font-size:13px}
-.resumo-grid dt{color:var(--ink3);font-weight:600}
-.resumo-grid dd{margin:0;color:var(--ink);font-weight:700}
 .resumo-empty{font-size:12.5px;color:var(--ink3);font-style:italic}
 .resumo-table{width:100%;border-collapse:collapse;font-size:12.5px}
 .resumo-table th{
   text-align:left;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
-  color:var(--ink3);font-weight:700;padding:0 8px 6px 0;border-bottom:1px solid var(--surf2);
+  color:var(--pd2);font-weight:700;padding:0 8px 6px 0;border-bottom:1px solid var(--surf2);
 }
 .resumo-table td{padding:6px 8px 6px 0;border-bottom:1px solid var(--surf2);color:var(--ink)}
 .resumo-table tr:last-child td{border-bottom:none}
 .resumo-table td.alert{color:var(--alert);font-weight:800}
 .resumo-note{font-size:11px;color:var(--ink3);margin-top:6px}
+
 @media print{
   @page{size:A4;margin:14mm 16mm}
-  body *{visibility:hidden}
-  #resumoSheet, #resumoSheet *{visibility:visible}
+  /* Cores fixas no tom claro do app, independente do tema atual — imprimir
+     a versão escura desperdiçaria tinta e ficaria ilegível no papel. Como
+     o resto das regras usa var(--ink)/var(--pd2)/etc., redefinir os tokens
+     aqui já propaga a paleta clara pra tudo dentro do resumo. */
   #resumoSheet{
+    --bg:#f2e8dc;--peach:#f4c8a8;--pd:#d99570;--pd2:#c07a52;--rose:#f0c9c0;
+    --ink:#3a2e2a;--ink2:#6b574e;--ink3:#9a8678;--surf:#f8edd9;--surf2:#efe0c4;--surfs:#fdf5ea;
+    --alert:#c14f3c;--alert-bg:#f7ded6;--cs:none;
     position:absolute;inset:0;max-width:none;max-height:none;overflow:visible;
     box-shadow:none;border-radius:0;padding:0;background:#fff;
-    font-family:'DM Sans',Arial,sans-serif;color:#1a1a1a;
   }
+  body *{visibility:hidden}
+  #resumoSheet, #resumoSheet *{visibility:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .no-print{display:none!important}
 
-  /* Cabeçalho tipo timbre: nome do documento + regra grossa embaixo,
-     no lugar da fonte serifada/decorativa usada dentro do app. */
-  #resumoSheet .exm-sheet-name{
-    font-family:'DM Sans',Arial,sans-serif;font-weight:700;font-size:15px;
-    letter-spacing:.01em;margin:0 0 3px;color:#111;
-  }
-  #resumoSheet .exm-sheet-desc{
-    font-size:9.5px;color:#555;margin:0 0 9px;padding-bottom:7px;border-bottom:1.25px solid #111;
-  }
+  #resumoSheet .resumo-hero{padding:14px 18px;margin-bottom:12px;border-radius:14px}
+  #resumoSheet .resumo-hero-title{font-size:17px;margin:4px 0 10px}
+  #resumoSheet .resumo-hero-stats{gap:18px;margin-bottom:6px}
+  #resumoSheet .rhs-lbl{font-size:8.5px}
+  #resumoSheet .rhs-val{font-size:11px}
+  #resumoSheet .resumo-chor-pill{font-size:9.5px;padding:4px 9px}
+  #resumoSheet .resumo-mast{margin-bottom:8px}
+  #resumoSheet .resumo-brand{font-size:15px}
+  #resumoSheet .resumo-mast-meta{font-size:8.5px}
 
-  #resumoSheet .resumo-sec{margin-top:11px;break-inside:avoid}
-  #resumoSheet .resumo-sec-title{
-    font-family:inherit;font-size:9.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
-    color:#111;margin-bottom:5px;padding-bottom:3px;border-bottom:.75px solid #111;
-  }
+  #resumoSheet .resumo-sec{margin-top:10px;break-inside:avoid}
+  #resumoSheet .resumo-sec-title{font-size:12px;margin-bottom:4px;padding-bottom:3px}
 
-  /* Dados da gestação: rótulo com largura fixa e enxuta — não mais 1fr/1fr
-     esticado até a borda da folha, que era o que abria aquele vão enorme
-     entre rótulo e valor. */
-  #resumoSheet .resumo-grid{
-    display:grid;grid-template-columns:112px 1fr;gap:3px 8px;font-size:10px;max-width:340px;
-  }
-  #resumoSheet .resumo-grid dt{color:#555;font-weight:600}
-  #resumoSheet .resumo-grid dd{margin:0;color:#111;font-weight:700}
-
-  /* Tabelas: largura pelo conteúdo (não 100% da página), colunas com
-     padding fixo e enxuto em vez de espaço distribuído pelo navegador. */
-  #resumoSheet .resumo-table{width:auto;border-collapse:collapse;font-size:9.5px}
-  #resumoSheet .resumo-table th{
-    text-align:left;font-size:8.5px;letter-spacing:.04em;text-transform:uppercase;
-    color:#555;font-weight:700;padding:0 18px 3px 0;border-bottom:1px solid #111;white-space:nowrap;
-  }
-  #resumoSheet .resumo-table td{padding:2.5px 18px 2.5px 0;border-bottom:.5px solid #ddd;white-space:nowrap}
+  /* Tabelas: largura pelo conteúdo, não esticada até a borda da folha —
+     era isso que abria aquele vão enorme entre as colunas. */
+  #resumoSheet .resumo-table{width:auto;font-size:9.5px}
+  #resumoSheet .resumo-table th{padding:0 18px 3px 0;white-space:nowrap}
+  #resumoSheet .resumo-table td{padding:2.5px 18px 2.5px 0;white-space:nowrap}
   #resumoSheet .resumo-table th:last-child,#resumoSheet .resumo-table td:last-child{padding-right:0}
-  #resumoSheet .resumo-table tr:last-child td{border-bottom:none}
-  #resumoSheet .resumo-note{font-size:8px;color:#888;margin-top:3px}
-  #resumoSheet .resumo-empty{font-size:9.5px;color:#888}
-  .resumo-table td.alert{color:#b3261e;font-weight:800}
+  #resumoSheet .resumo-note{font-size:8px}
+  #resumoSheet .resumo-empty{font-size:9.5px}
 }
 
 /* Contador de movimentos fetais / monitor de contrações */
@@ -1731,6 +1742,15 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
 
   <!-- ── Perfil ── -->
   <div class="page" id="pg-profile">
+    <div class="card">
+      <div class="lbl">Seus dados</div>
+      <div class="card-title" style="font-size:17px">Como podemos te <span class="serif" style="color:var(--pd);font-style:italic">chamar?</span></div>
+      <div class="field"><label>Seu nome</label>
+        <input class="inp" type="text" id="motherNameInp" placeholder="Ex: Camila">
+      </div>
+      <div class="helper">Usado só pra personalizar o resumo que você mostra ou imprime pro seu obstetra.</div>
+    </div>
+
     <div class="card feat">
       <div class="lbl">👯 Sua gestação gemelar</div>
       <div class="card-title">Qual a <span class="serif" style="color:var(--pd);font-style:italic">corionicidade?</span></div>
@@ -2230,7 +2250,7 @@ document.getElementById('darkBtn').addEventListener('click',()=>{
    voltar pra gestação única (isso já existe no MKCalc original). */
 const PROFILE_KEY='mkcalc_profile';
 function loadProfile(){
-  const base={name:'',sex:'',twins:true,chorionicity:null,babyB:{name:'',sex:''}};
+  const base={motherName:'',name:'',sex:'',twins:true,chorionicity:null,babyB:{name:'',sex:''}};
   try{
     const raw=localStorage.getItem(PROFILE_KEY);
     const p=raw?JSON.parse(raw):{};
@@ -2260,6 +2280,7 @@ function applyProfileTheme(){
   else document.documentElement.removeAttribute('data-babies');
 }
 function renderProfileUI(){
+  document.getElementById('motherNameInp').value=profile.motherName||'';
   document.getElementById('babyNameInp').value=profile.name||'';
   document.getElementById('babyNameInpB').value=profile.babyB.name||'';
   document.getElementById('babyNameLblA').textContent='Nome do Bebê A';
@@ -2325,6 +2346,10 @@ function updateBabyNameUI(){
     :(profile.name?`Acompanhando ${profile.sex==='menina'?'a':'o'} ${babyNameHTML(profile.name)}`:'Acompanhando o bebê');
   updateBabyLabels(currentIG);
 }
+document.getElementById('motherNameInp').addEventListener('input',e=>{
+  profile.motherName=e.target.value;
+  saveProfile();
+});
 document.getElementById('babyNameInp').addEventListener('input',e=>{
   profile.name=e.target.value;
   saveProfile();
@@ -3906,17 +3931,22 @@ function renderResumoBody(){
   const saved=loadPregnancy();
   const rangeLbl=resumoRangeDays?`últimos ${resumoRangeDays} dias`:'todo o histórico';
 
-  let gestHtml='<div class="resumo-empty">Nenhum cálculo de idade gestacional ainda.</div>';
+  const motherName=(profile.motherName||'').trim();
+  let heroHtml='<div class="resumo-empty">Nenhum cálculo de idade gestacional ainda.</div>';
   if(currentIG&&saved){
     const dpp=dppFromLMP(saved.lmp);
     const chorName=profile.chorionicity?CHOR_NAMES[profile.chorionicity]:null;
     const surv=profile.chorionicity?SURV_COPY[profile.chorionicity]:null;
-    gestHtml=`<dl class="resumo-grid">
-      <dt>Idade gestacional</dt><dd>${formatWeeksText(currentIG.weeks,currentIG.days)}</dd>
-      <dt>DPP</dt><dd>${fmt(dpp)}</dd>
-      <dt>Método</dt><dd>${saved.method}</dd>
-      <dt>Corionicidade</dt><dd>${chorName||'Não informada'}</dd>
-    </dl>${surv?`<div class="resumo-note">${surv.html.replace(/^[🟢🟠🔴]\s*/u,'')}</div>`:''}`;
+    const titleLead=motherName?`${motherName}, você está com`:'Você está com';
+    heroHtml=`
+      <div class="resumo-eyebrow">Resumo pra consulta</div>
+      <div class="resumo-hero-title">${titleLead} <em>${formatWeeksText(currentIG.weeks,currentIG.days)}</em></div>
+      <div class="resumo-hero-stats">
+        <div><div class="rhs-lbl">DPP</div><div class="rhs-val">${fmt(dpp)}</div></div>
+        <div><div class="rhs-lbl">Método</div><div class="rhs-val">${saved.method}</div></div>
+        ${chorName?`<div><div class="rhs-lbl">Corionicidade</div><div class="rhs-val">${chorName}</div></div>`:''}
+      </div>
+      ${surv?`<div class="resumo-chor-pill">${surv.html.replace(/^[🟢🟠🔴]\s*/u,'')}</div>`:''}`;
   }
 
   const wEntries=filterByPeriod(weightEntries,resumoRangeDays,'date');
@@ -3961,8 +3991,12 @@ function renderResumoBody(){
   const contrHtml=resumoTable(['Data','Hora','Duração','Intervalo'],contrRows);
 
   body.innerHTML=`
-    <div class="exm-sheet-name"><span class="no-print">📋 </span>Resumo pra consulta</div>
-    <div class="exm-sheet-desc">Gerado em ${fmt(new Date())} · ${currentUser&&currentUser.email?currentUser.email:''}</div>
+    <div class="resumo-mast">
+      <div class="resumo-brand">MK<span>Duo</span></div>
+      <div class="resumo-mast-meta">Gerado em ${fmt(new Date())}<br>${currentUser&&currentUser.email?currentUser.email:''}</div>
+    </div>
+    <div class="resumo-hero">${heroHtml}</div>
+
     <div class="field no-print" style="margin-bottom:4px"><label>Período das tabelas</label>
       <div class="sex-tabs" id="resumoRangeTabs" style="margin-bottom:0">
         <button class="stab${resumoRangeDays===7?' on':''}" type="button" data-days="7">7 dias</button>
@@ -3973,7 +4007,6 @@ function renderResumoBody(){
     </div>
     <div class="resumo-note" style="margin-bottom:14px">Período das tabelas: ${rangeLbl}.</div>
 
-    <div class="resumo-sec"><div class="resumo-sec-title">Gestação</div>${gestHtml}</div>
     <div class="resumo-sec"><div class="resumo-sec-title">Peso materno</div>${weightHtml}</div>
     <div class="resumo-sec"><div class="resumo-sec-title">Pressão arterial</div>${bpHtml}</div>
     <div class="resumo-sec"><div class="resumo-sec-title">Glicemia capilar</div>${glicHtml}</div>
