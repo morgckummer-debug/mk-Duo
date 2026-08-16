@@ -4,7 +4,15 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>MK-Duo</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#c07a52">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="MK-Duo">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
 <link rel="shortcut icon" href="favicon.ico">
@@ -256,6 +264,20 @@ body::after{
 .trial-banner-txt{display:flex;align-items:center;gap:7px;line-height:1.3}
 .trial-banner-arrow{font-size:14px;flex-shrink:0}
 .trial-banner.expired{background:linear-gradient(120deg,var(--alert-bg) 0%,var(--rose) 100%)}
+
+/* ── Aviso de instalação do app (PWA) ── */
+.install-banner{
+  display:none;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--surfs);border:1.5px solid var(--pd);
+  color:var(--ink);border-radius:16px;padding:11px 14px;margin:0 16px 4px;
+  font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;
+  box-shadow:var(--cs);
+}
+.install-banner.show{display:flex}
+.install-banner-txt{display:flex;align-items:center;gap:7px;line-height:1.3;cursor:pointer}
+.install-banner-actions{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.install-banner-btn{color:var(--pd2);font-weight:800;cursor:pointer}
+.install-banner-close{color:var(--ink3);font-size:15px;cursor:pointer;padding:2px}
 
 /* ── Cards de monitoramento comprimidos (peso, movimentos, contrações) ──
    Ficam fechados por padrão, mostrando só um resumo de uma linha; tocar no
@@ -1176,6 +1198,14 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
     </div>
   </div>
 
+  <div class="install-banner" id="installBanner">
+    <div class="install-banner-txt" id="installBannerTxt">📲 Instale o MK-Duo no seu celular</div>
+    <div class="install-banner-actions">
+      <span class="install-banner-btn" id="installBannerBtn">Instalar</span>
+      <span class="install-banner-close" id="installBannerClose">✕</span>
+    </div>
+  </div>
+
   <div class="trial-banner" id="trialBanner">
     <div class="trial-banner-txt" id="trialBannerTxt">🎁 Período de teste grátis</div>
     <div class="trial-banner-arrow">→</div>
@@ -1724,6 +1754,21 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
       <div class="exm-cta-arrow">→</div>
     </div>
     <div class="premium-refresh-btn" id="premiumRefreshBtn">Já comprei — verificar acesso</div>
+  </div>
+</div>
+
+<!-- Instruções de instalação (iOS Safari não tem prompt nativo) -->
+<div class="exm-overlay" id="installOverlay">
+  <div class="exm-sheet" id="installSheet">
+    <div class="exm-sheet-handle"></div>
+    <button class="exm-sheet-close" id="installClose">✕</button>
+    <div class="exm-sheet-name">📲 Instalar o MK-Duo</div>
+    <div class="exm-sheet-desc">Adicione o app à tela de início pra abrir com um toque, em tela cheia, como um aplicativo de verdade.</div>
+    <ul class="exm-sheet-items">
+      <li>1. Toque no ícone Compartilhar (□ com seta ↑) na barra do Safari</li>
+      <li>2. Escolha "Adicionar à Tela de Início"</li>
+      <li>3. Toque em "Adicionar" no canto superior direito</li>
+    </ul>
   </div>
 </div>
 
@@ -3888,9 +3933,65 @@ async function onLoginSuccess(){
   updateBabyNameUI();
   loadStoredPregnancy();
   applyPremiumGate();
+  maybeShowInstallBanner();
   // Tutorial de boas-vindas só na 1ª vez, e só depois que ela já está
   // logada — evita competir com a tela de entrar/criar conta.
   if(!localStorage.getItem(ONB_KEY))setTimeout(openOnboarding,400);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   Instalar como app (PWA)
+   ══════════════════════════════════════════════════════════════
+   Android/Chrome dispara "beforeinstallprompt" e a gente guarda o
+   evento pra chamar .prompt() quando ela tocar no banner. iOS/Safari
+   não tem esse evento — lá só dá pra instalar manualmente, então
+   mostramos um passo a passo (Compartilhar → Adicionar à Tela de
+   Início). Se ela já instalou ou já dispensou o aviso, some pra sempre. */
+const INSTALL_DISMISS_KEY='mkduo_install_dismissed';
+const isIOSDevice=/iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;
+const isStandaloneApp=window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
+let deferredInstallPrompt=null;
+
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredInstallPrompt=e;
+  maybeShowInstallBanner();
+});
+window.addEventListener('appinstalled',()=>{
+  deferredInstallPrompt=null;
+  try{localStorage.setItem(INSTALL_DISMISS_KEY,'1');}catch{}
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+function maybeShowInstallBanner(){
+  if(isStandaloneApp)return;
+  if(!currentUser)return;
+  try{if(localStorage.getItem(INSTALL_DISMISS_KEY))return;}catch{}
+  if(!deferredInstallPrompt&&!isIOSDevice)return;
+  document.getElementById('installBanner').classList.add('show');
+}
+function dismissInstallBanner(){
+  document.getElementById('installBanner').classList.remove('show');
+  try{localStorage.setItem(INSTALL_DISMISS_KEY,'1');}catch{}
+}
+async function triggerInstall(){
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    const{outcome}=await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt=null;
+    if(outcome==='accepted')dismissInstallBanner();
+  }else if(isIOSDevice){
+    document.getElementById('installOverlay').classList.add('show');
+  }
+}
+document.getElementById('installBannerTxt').addEventListener('click',triggerInstall);
+document.getElementById('installBannerBtn').addEventListener('click',triggerInstall);
+document.getElementById('installBannerClose').addEventListener('click',e=>{e.stopPropagation();dismissInstallBanner();});
+document.getElementById('installClose').addEventListener('click',()=>document.getElementById('installOverlay').classList.remove('show'));
+document.getElementById('installOverlay').addEventListener('click',e=>{if(e.target.id==='installOverlay')document.getElementById('installOverlay').classList.remove('show');});
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
 }
 
 /* Verifica, ao abrir o app, se já existe uma sessão ativa (usuária
