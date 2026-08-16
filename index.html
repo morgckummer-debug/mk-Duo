@@ -3960,7 +3960,12 @@ function resumoWeightChart(entries){
   const minKg=Math.min(...kgs),maxKg=Math.max(...kgs);
   const padKg=Math.max(0.5,(maxKg-minKg)*0.15);
   const lo=minKg-padKg,hi=maxKg+padKg;
-  const W=680,H=120,padX=4,padY=12;
+  const H=120,padX=4,padY=12;
+  /* Largura proporcional à quantidade de pontos, com um espaçamento mínimo
+     confortável entre eles — sem isso, 2-3 registros esticados até a borda
+     da folha ficam com um ponto isolado em cada canto, muito espaçados. */
+  const GAP=100,MIN_W=240,MAX_W=680;
+  const W=Math.min(MAX_W,Math.max(MIN_W,GAP*(pts.length-1)+padX*2));
   const xAt=i=>padX+(i/(pts.length-1))*(W-padX*2);
   const yAt=kg=>padY+(1-((kg-lo)/((hi-lo)||1)))*(H-padY*2);
   const pathD=pts.map((p,i)=>`${i===0?'M':'L'}${xAt(i).toFixed(1)},${yAt(p.kg).toFixed(1)}`).join(' ');
@@ -3968,7 +3973,7 @@ function resumoWeightChart(entries){
   const dots=pts.map((p,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(p.kg).toFixed(1)}" r="${i===pts.length-1?4:2.6}" fill="${i===pts.length-1?'var(--pd2)':'var(--pd)'}"/>`).join('');
   const first=pts[0],last=pts[pts.length-1];
   const gain=last.kg-first.kg;
-  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;display:block">
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMid meet" style="width:${W}px;max-width:100%;height:${H}px;display:block">
       <defs><linearGradient id="resWgGrad" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="var(--pd)" stop-opacity="0.28"/>
         <stop offset="100%" stop-color="var(--pd)" stop-opacity="0"/>
@@ -3977,7 +3982,7 @@ function resumoWeightChart(entries){
       <path d="${pathD}" fill="none" stroke="var(--pd2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       ${dots}
     </svg>
-    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:2px">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:2px;width:${W}px;max-width:100%">
       <span>${fmt(new Date(first.date))} · ${fmtKg(first.kg)}</span>
       <span>${fmt(new Date(last.date))} · ${fmtKg(last.kg)}</span>
     </div>
