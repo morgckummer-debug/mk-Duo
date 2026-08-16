@@ -744,6 +744,21 @@ body::after{
 
 @media print{
   @page{size:A4;margin:14mm 16mm}
+  /* Estratégia diferente da 1ª tentativa: em vez de esconder tudo com
+     visibility:hidden (que preserva o espaço no layout — e como o resumo
+     virou position:static, ele acabava empurrado pra baixo de todo o
+     resto do app, ou sobrando um retângulo vazio/escuro atrás dele
+     dependendo do motor de impressão), agora tiramos os outros irmãos do
+     body do fluxo por completo com display:none. Só o #resumoOverlay
+     participa do documento impresso, começando do topo da página, sem
+     position:fixed/absolute — que é onde a maioria dos bugs de impressão
+     entre navegadores/impressoras aparece. */
+  html,body{background:#fff!important;margin:0!important}
+  body>*{display:none!important}
+  #resumoOverlay{
+    display:block!important;position:static!important;inset:auto!important;
+    background:#fff!important;backdrop-filter:none!important;
+  }
   /* Cores fixas no tom claro do app, independente do tema atual — imprimir
      a versão escura desperdiçaria tinta e ficaria ilegível no papel. Como
      o resto das regras usa var(--ink)/var(--pd2)/etc., redefinir os tokens
@@ -752,11 +767,11 @@ body::after{
     --bg:#f2e8dc;--peach:#f4c8a8;--pd:#d99570;--pd2:#c07a52;--rose:#f0c9c0;
     --ink:#3a2e2a;--ink2:#6b574e;--ink3:#9a8678;--surf:#f8edd9;--surf2:#efe0c4;--surfs:#fdf5ea;
     --alert:#c14f3c;--alert-bg:#f7ded6;--cs:none;
-    position:absolute;inset:0;max-width:none;max-height:none;overflow:visible;
-    box-shadow:none;border-radius:0;padding:0;background:#fff;
+    display:block!important;position:static!important;transform:none!important;
+    max-width:none;width:auto;max-height:none;overflow:visible;
+    box-shadow:none;border-radius:0;padding:0;margin:0;background:#fff;
   }
-  body *{visibility:hidden}
-  #resumoSheet, #resumoSheet *{visibility:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #resumoOverlay *{visibility:visible;-webkit-print-color-adjust:exact;print-color-adjust:exact}
   .no-print{display:none!important}
 
   #resumoSheet .resumo-hero{padding:14px 18px;margin-bottom:12px;border-radius:14px}
@@ -2427,8 +2442,8 @@ const PREG_KEY='mkcalc_pregnancy';
 function loadPregnancy(){
   try{const raw=localStorage.getItem(PREG_KEY);return raw?JSON.parse(raw):null;}catch{return null;}
 }
-function savePregnancy(lmpDate,method){
-  try{localStorage.setItem(PREG_KEY,JSON.stringify({lmp:toISO(lmpDate),method}));}catch{}
+function savePregnancy(lmpDate,method,extra){
+  try{localStorage.setItem(PREG_KEY,JSON.stringify({lmp:toISO(lmpDate),method,...(extra||{})}));}catch{}
 }
 function loadStoredPregnancy(){
   const saved=loadPregnancy();
@@ -2573,7 +2588,7 @@ renderDi();
 document.getElementById('calcBtn').addEventListener('click',runCalc);
 
 function runCalc(){
-  let ig=null,dpp=null,method='',fertRes=null;
+  let ig=null,dpp=null,method='',fertRes=null,pregExtra=null;
   if(curTab==='dum'){
     const v=parseBR(document.getElementById('lmpInp').value);
     if(!v){showToast('Data inválida. Confira o dia, mês e ano informados.',2500);return;}
@@ -2585,6 +2600,11 @@ function runCalc(){
     if(!v){showToast('Data inválida. Confira o dia, mês e ano informados.',2500);return;}
     if(!w){showToast('Informe as semanas do ultrassom',2000);return;}
     ig=igFromUSG(v,w,d||0);dpp=dppFromUSG(v,w,d||0);method='Ultrassom';
+    /* Guarda a data do exame e a IG observada nele à parte — depois de
+       convertida pra uma DUM equivalente, essa informação original se
+       perderia, mas o obstetra quer ver exatamente o que foi visto no
+       1º ultrassom, não só o resultado derivado. */
+    pregExtra={usgDate:v,usgWeeks:w,usgDays:d||0};
   } else if(curTab==='dpp'){
     const v=parseBR(document.getElementById('dppInp').value);
     if(!v){showToast('Data inválida. Confira o dia, mês e ano informados.',2500);return;}
@@ -2601,7 +2621,7 @@ function runCalc(){
     showToast('Essa data resulta em mais de 42 semanas de gestação. Confira a data informada.',3000);
     return;
   }
-  if(ig&&dpp){savePregnancy(ig.lmp,method);syncPregnancyToCloud();renderPregResult(ig,dpp,method);goResult();resumeOnboardingAfterCalc();}
+  if(ig&&dpp){savePregnancy(ig.lmp,method,pregExtra);syncPregnancyToCloud();renderPregResult(ig,dpp,method);goResult();resumeOnboardingAfterCalc();}
 }
 
 function goResult(){goToPage('result');}
@@ -3926,6 +3946,43 @@ function resumoTable(headers,rows){
   if(!rows.length)return `<div class="resumo-empty">Nenhum registro nesse período.</div>`;
   return `<table class="resumo-table"><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
 }
+/* Peso em gráfico de linha, não em tabela — é o que dá pra ler a tendência
+   num relance na consulta. Mesma lógica de renderWeightChart() (aba
+   Resultado), só que numa faixa mais larga pra ocupar a largura do resumo. */
+function resumoWeightChart(entries){
+  if(!entries.length)return '<div class="resumo-empty">Nenhum registro nesse período.</div>';
+  if(entries.length===1){
+    const w=entries[0];
+    return `<div class="resumo-note" style="margin-top:0">${fmt(new Date(w.date))}: <strong style="color:var(--ink)">${fmtKg(w.kg)}</strong> — só um registro nesse período, sem gráfico ainda.</div>`;
+  }
+  const pts=entries;
+  const kgs=pts.map(p=>p.kg);
+  const minKg=Math.min(...kgs),maxKg=Math.max(...kgs);
+  const padKg=Math.max(0.5,(maxKg-minKg)*0.15);
+  const lo=minKg-padKg,hi=maxKg+padKg;
+  const W=680,H=120,padX=4,padY=12;
+  const xAt=i=>padX+(i/(pts.length-1))*(W-padX*2);
+  const yAt=kg=>padY+(1-((kg-lo)/((hi-lo)||1)))*(H-padY*2);
+  const pathD=pts.map((p,i)=>`${i===0?'M':'L'}${xAt(i).toFixed(1)},${yAt(p.kg).toFixed(1)}`).join(' ');
+  const areaD=`${pathD} L${xAt(pts.length-1).toFixed(1)},${H-padY} L${xAt(0).toFixed(1)},${H-padY} Z`;
+  const dots=pts.map((p,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(p.kg).toFixed(1)}" r="${i===pts.length-1?4:2.6}" fill="${i===pts.length-1?'var(--pd2)':'var(--pd)'}"/>`).join('');
+  const first=pts[0],last=pts[pts.length-1];
+  const gain=last.kg-first.kg;
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${H}px;display:block">
+      <defs><linearGradient id="resWgGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--pd)" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="var(--pd)" stop-opacity="0"/>
+      </linearGradient></defs>
+      <path d="${areaD}" fill="url(#resWgGrad)" stroke="none"/>
+      <path d="${pathD}" fill="none" stroke="var(--pd2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      ${dots}
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:2px">
+      <span>${fmt(new Date(first.date))} · ${fmtKg(first.kg)}</span>
+      <span>${fmt(new Date(last.date))} · ${fmtKg(last.kg)}</span>
+    </div>
+    <div class="resumo-note">Ganho no período: ${gain>=0?'+':''}${fmtKg(gain)}</div>`;
+}
 function renderResumoBody(){
   const body=document.getElementById('resumoBody');
   const saved=loadPregnancy();
@@ -3938,20 +3995,31 @@ function renderResumoBody(){
     const chorName=profile.chorionicity?CHOR_NAMES[profile.chorionicity]:null;
     const surv=profile.chorionicity?SURV_COPY[profile.chorionicity]:null;
     const titleLead=motherName?`${motherName}, você está com`:'Você está com';
+    /* O obstetra quer ver a base do cálculo, não só o nome do método —
+       se foi por DUM, a data da DUM; se foi por ultrassom, a data do
+       exame e a IG observada nele (guardadas à parte em runCalc, já
+       que a conversão pra DUM equivalente perderia esse detalhe). */
+    let baseCalc=saved.method;
+    if(saved.method==='DUM'){
+      baseCalc=`DUM · ${fmt(new Date(saved.lmp+'T12:00:00'))}`;
+    }else if(saved.method==='Ultrassom'&&saved.usgDate){
+      baseCalc=`USG · ${fmt(new Date(saved.usgDate+'T12:00:00'))} (${saved.usgWeeks}s${saved.usgDays||0}d)`;
+    }else if(saved.method==='DPP'){
+      baseCalc='DPP informada diretamente';
+    }
     heroHtml=`
       <div class="resumo-eyebrow">Resumo pra consulta</div>
       <div class="resumo-hero-title">${titleLead} <em>${formatWeeksText(currentIG.weeks,currentIG.days)}</em></div>
       <div class="resumo-hero-stats">
         <div><div class="rhs-lbl">DPP</div><div class="rhs-val">${fmt(dpp)}</div></div>
-        <div><div class="rhs-lbl">Método</div><div class="rhs-val">${saved.method}</div></div>
+        <div><div class="rhs-lbl">Base de cálculo</div><div class="rhs-val">${baseCalc}</div></div>
         ${chorName?`<div><div class="rhs-lbl">Corionicidade</div><div class="rhs-val">${chorName}</div></div>`:''}
       </div>
       ${surv?`<div class="resumo-chor-pill">${surv.html.replace(/^[🟢🟠🔴]\s*/u,'')}</div>`:''}`;
   }
 
   const wEntries=filterByPeriod(weightEntries,resumoRangeDays,'date');
-  const weightRows=[...wEntries].reverse().map(w=>`<tr><td>${fmt(new Date(w.date))}</td><td>${fmtKg(w.kg)}</td></tr>`);
-  const weightHtml=resumoTable(['Data','Peso'],weightRows);
+  const weightHtml=resumoWeightChart(wEntries);
 
   const bpFiltered=filterByPeriod(bpEntries,resumoRangeDays,'date');
   const bpRows=[...bpFiltered].reverse().map(b=>{
@@ -3986,10 +4054,6 @@ function renderResumoBody(){
   const kickRows=[...kickFiltered].reverse().map(k=>`<tr><td>${fmt(new Date(k.date))}</td><td>${fmtClock(new Date(k.date))}</td><td>${fmtKickDuration(k.ms)} para 10 movimentos</td></tr>`);
   const kickHtml=resumoTable(['Data','Hora','Duração'],kickRows);
 
-  const contrFiltered=filterByPeriod(contractions,resumoRangeDays,'start');
-  const contrRows=[...contrFiltered].reverse().map(c=>`<tr><td>${fmt(new Date(c.start))}</td><td>${fmtClock(new Date(c.start))}</td><td>${fmtKickDuration(c.ms)}</td><td>${fmtGap(c.gapMs)}</td></tr>`);
-  const contrHtml=resumoTable(['Data','Hora','Duração','Intervalo'],contrRows);
-
   body.innerHTML=`
     <div class="resumo-mast">
       <div class="resumo-brand">MK<span>Duo</span></div>
@@ -4010,8 +4074,7 @@ function renderResumoBody(){
     <div class="resumo-sec"><div class="resumo-sec-title">Peso materno</div>${weightHtml}</div>
     <div class="resumo-sec"><div class="resumo-sec-title">Pressão arterial</div>${bpHtml}</div>
     <div class="resumo-sec"><div class="resumo-sec-title">Glicemia capilar</div>${glicHtml}</div>
-    <div class="resumo-sec"><div class="resumo-sec-title">Movimentos fetais</div>${kickHtml}</div>
-    <div class="resumo-sec"><div class="resumo-sec-title">Contrações</div>${contrHtml}</div>`;
+    <div class="resumo-sec"><div class="resumo-sec-title">Movimentos fetais</div>${kickHtml}</div>`;
 
   document.querySelectorAll('#resumoRangeTabs .stab').forEach(btn=>{
     btn.addEventListener('click',()=>{
