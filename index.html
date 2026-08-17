@@ -27,6 +27,7 @@
   --rose:#f0c9c0;
   --alert:#c14f3c;--alert-bg:#f7ded6;
   --good:#5f8f5a;--good-bg:#dfead9;
+  --amber:#dea63f;--amber-bg:#f6e6c4;
   --cream:#f8edd9;--cream2:#f0e0c4;
   --ink:#3a2e2a;--ink2:#6b574e;--ink3:#9a8678;
   --surf:#f8edd9;--surf2:#efe0c4;--surfs:#fdf5ea;
@@ -47,6 +48,7 @@
   --rose:#7a4a42;
   --alert:#e2735c;--alert-bg:#3a231e;
   --good:#7fae74;--good-bg:#233524;
+  --amber:#c99a4e;--amber-bg:#3a2e18;
   --cream:#2a211a;--cream2:#322719;
   --ink:#f0e4d4;--ink2:#c4aa94;--ink3:#8a7060;
   --surf:#251e17;--surf2:#2e2418;--surfs:#332820;
@@ -465,6 +467,7 @@ body::after{
 .femur-unit{font-size:13px;color:var(--ink2);font-weight:700;flex-shrink:0}
 .femur-result{margin-top:10px;font-size:13.5px;color:var(--ink);line-height:1.55;background:var(--surf);border-radius:12px;padding:10px 12px;box-shadow:var(--cs)}
 .femur-result strong{color:var(--pd2)}
+.pfe-hint{font-size:10.5px;color:var(--ink3);line-height:1.4;margin-top:6px}
 @keyframes floatOrb{
   0%,100%{transform:translateY(0)}
   50%{transform:translateY(-5px)}
@@ -475,6 +478,41 @@ body::after{
 .baby-dev{font-size:13px;color:var(--ink2);line-height:1.6;margin-top:12px;background:rgba(255,250,240,.5);border-radius:12px;padding:12px 14px}
 [data-dark] .baby-dev{background:rgba(30,20,10,.35)}
 .baby-name-em{color:var(--pd2);font-weight:800}
+
+/* ── Percentil de peso fetal (PFE) — um "termômetro" por bebê, do P1 ao P99,
+   com uma zona de transição (vermelho→âmbar→verde→âmbar→vermelho) marcando
+   CIUR/PIG/AIG/GIG e um marcador na posição exata do peso informado. */
+.pfe-wrap{display:flex;flex-direction:column;gap:12px;margin-top:14px}
+.pfe-wrap.hidden{display:none}
+.pfe-card{background:var(--surf);border-radius:16px;padding:16px;box-shadow:var(--cs)}
+.pfe-card.hidden{display:none}
+.pfe-card-lbl{font-size:10px;color:var(--ink3);letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-bottom:10px}
+.pfe-badge{
+  display:inline-flex;align-items:baseline;gap:5px;padding:11px 22px;border-radius:var(--pill);
+  background:linear-gradient(135deg,var(--ink),var(--ink2));color:var(--surfs);
+  font-family:'DM Sans',sans-serif;font-weight:700;font-size:14.5px;box-shadow:var(--cs);
+}
+.pfe-badge-num{font-family:'Fraunces',serif;font-size:22px;font-weight:600}
+.pfe-track{
+  position:relative;height:10px;border-radius:5px;margin:18px 4px 0;box-shadow:var(--ci);
+  background:linear-gradient(90deg,
+    var(--alert) 0%,var(--alert) 2.04%,
+    var(--amber) 2.04%,var(--amber) 9.18%,
+    var(--good) 9.18%,var(--good) 90.82%,
+    var(--amber) 90.82%,var(--amber) 97.96%,
+    var(--alert) 97.96%,var(--alert) 100%);
+}
+.pfe-dot{
+  position:absolute;top:50%;width:12px;height:12px;border-radius:50%;
+  background:var(--ink);box-shadow:0 0 0 4px var(--surfs),var(--cs);
+  transform:translate(-50%,-50%);transition:left .4s cubic-bezier(.22,.68,0,1);
+}
+.pfe-ticks{position:relative;height:14px;margin:6px 4px 0}
+.pfe-tick{position:absolute;top:0;transform:translateX(-50%);font-size:9.5px;color:var(--ink3);font-weight:700;white-space:nowrap}
+.pfe-ticks-outer{display:flex;justify-content:space-between;margin:2px 4px 0;font-size:9.5px;color:var(--ink3);letter-spacing:.08em;text-transform:uppercase;font-weight:700}
+.pfe-ticks-title{color:var(--ink2)}
+.pfe-meta{margin-top:14px;font-size:12.5px;color:var(--ink2);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pfe-meta strong{color:var(--pd2)}
 
 /* ── Card duplo de bebês (gestação gemelar) ──
    Mesma fruta pros dois (é o tamanho médio esperado pra semana, igual pra
@@ -1431,6 +1469,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
                 <input class="inp" type="number" id="weightEstInpA" placeholder="Peso estimado" step="1" min="0" inputmode="decimal">
                 <span class="femur-unit">g</span>
               </div>
+              <div class="pfe-hint">Percentil de peso calculado a partir de 22 semanas de IG.</div>
             </div>
           </div>
 
@@ -1451,7 +1490,37 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
                 <input class="inp" type="number" id="weightEstInpB" placeholder="Peso estimado" step="1" min="0" inputmode="decimal">
                 <span class="femur-unit">g</span>
               </div>
+              <div class="pfe-hint">Percentil de peso calculado a partir de 22 semanas de IG.</div>
             </div>
+          </div>
+        </div>
+
+        <div class="pfe-wrap hidden" id="pfeWrap">
+          <div class="pfe-card hidden" id="pfeCardA">
+            <div class="pfe-card-lbl" id="pfeCardLblA">Bebê A</div>
+            <div class="pfe-badge">Percentil <span class="pfe-badge-num" id="pfeNumA">—</span></div>
+            <div class="pfe-track"><div class="pfe-dot" id="pfeDotA"></div></div>
+            <div class="pfe-ticks">
+              <span class="pfe-tick" style="left:9.18%">P10</span>
+              <span class="pfe-tick" style="left:90.82%">P90</span>
+            </div>
+            <div class="pfe-ticks-outer">
+              <span>P1</span><span class="pfe-ticks-title">Percentil de peso</span><span>P99</span>
+            </div>
+            <div class="pfe-meta">Mediana da semana: <strong id="pfeMedianA">—</strong> <span class="bmi-pill" id="pfeClassA"></span></div>
+          </div>
+          <div class="pfe-card hidden" id="pfeCardB">
+            <div class="pfe-card-lbl" id="pfeCardLblB">Bebê B</div>
+            <div class="pfe-badge">Percentil <span class="pfe-badge-num" id="pfeNumB">—</span></div>
+            <div class="pfe-track"><div class="pfe-dot" id="pfeDotB"></div></div>
+            <div class="pfe-ticks">
+              <span class="pfe-tick" style="left:9.18%">P10</span>
+              <span class="pfe-tick" style="left:90.82%">P90</span>
+            </div>
+            <div class="pfe-ticks-outer">
+              <span>P1</span><span class="pfe-ticks-title">Percentil de peso</span><span>P99</span>
+            </div>
+            <div class="pfe-meta">Mediana da semana: <strong id="pfeMedianB">—</strong> <span class="bmi-pill" id="pfeClassB"></span></div>
           </div>
         </div>
 
@@ -2150,6 +2219,84 @@ function fetalHeightFromFemur(femurCm){
   return femurCm*6.9;
 }
 
+/* ── Percentil de peso fetal estimado (PFE) por idade gestacional ──
+   Combina Hadlock (1991, 20–40s) com INTERGROWTH-21st (30–40s, mais fiel
+   perto do termo): abaixo de 30s usa só Hadlock, de 35s em diante usa só
+   INTERGROWTH, e entre 30 e 35s mistura as duas linearmente. Tabelas e
+   regra de mistura já validadas em outro projeto — mantidas exatamente
+   aqui, só adaptadas ao layout/nomenclatura do MK-Duo. */
+const PFE_HADLOCK={
+  20:[247,275,331,387],21:[298,331,399,467],22:[357,397,478,559],23:[424,472,568,664],
+  24:[503,556,670,784],25:[590,653,785,918],26:[685,758,913,1068],27:[791,875,1055,1234],
+  28:[908,1004,1210,1416],29:[1033,1143,1379,1613],30:[1169,1294,1559,1824],31:[1312,1452,1751,2049],
+  32:[1465,1621,1953,2285],33:[1622,1795,2162,2530],34:[1788,1978,2377,2781],35:[1955,2164,2595,3036],
+  36:[2126,2352,2813,3291],37:[2294,2537,3028,3543],38:[2455,2716,3236,3786],39:[2607,2884,3435,4019],
+  40:[2747,3039,3619,4234]
+};
+const PFE_INTERGROWTH={
+  30:[967,1089,1396,1813],31:[1062,1207,1568,2050],32:[1162,1334,1755,2304],33:[1269,1469,1954,2570],
+  34:[1380,1612,2162,2843],35:[1494,1761,2378,3116],36:[1612,1913,2594,3381],37:[1731,2068,2806,3629],
+  38:[1851,2221,3006,3850],39:[1969,2368,3186,4034],40:[2085,2505,3338,4171]
+};
+const PFE_Z=[-1.8808,-1.2816,0,1.2816]; // z-scores padrão de p3, p10, p50, p90
+
+// Interpola [p3,p10,p50,p90] de uma tabela pra uma GA fracionária, entre a
+// semana inteira anterior e a seguinte.
+function pfeInterpTable(table,gaWeeks){
+  const weeks=Object.keys(table).map(Number);
+  const min=Math.min(...weeks),max=Math.max(...weeks);
+  const w=Math.max(min,Math.min(max,gaWeeks));
+  const lo=Math.floor(w),hi=Math.ceil(w);
+  if(lo===hi)return table[lo];
+  const t=w-lo;
+  return table[lo].map((v,i)=>v+(table[hi][i]-v)*t);
+}
+// Linha [p3,p10,p50,p90] final pra uma GA, misturando Hadlock e INTERGROWTH.
+function pfeMixedRow(gaWeeks){
+  const hadlock=pfeInterpTable(PFE_HADLOCK,gaWeeks);
+  if(gaWeeks<30)return hadlock;
+  const intergrowth=pfeInterpTable(PFE_INTERGROWTH,gaWeeks);
+  if(gaWeeks>=35)return intergrowth;
+  const t=(gaWeeks-30)/(35-30);
+  return hadlock.map((v,i)=>v+(intergrowth[i]-v)*t);
+}
+// Aproximação de Abramowitz & Stegun 7.1.26 pra função erro.
+function pfeErf(x){
+  const sign=x<0?-1:1,ax=Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t=1/(1+p*ax);
+  const y=1-(((((a5*t+a4)*t+a3)*t+a2)*t+a1)*t)*Math.exp(-ax*ax);
+  return sign*y;
+}
+function pfeNormalCdf(z){
+  return 0.5*(1+pfeErf(z/Math.SQRT2));
+}
+function pfeClassify(percentile){
+  if(percentile<=3)return{lbl:'CIUR',tone:'ob'};
+  if(percentile<10)return{lbl:'PIG',tone:'low'};
+  if(percentile>90)return{lbl:'GIG',tone:'over'};
+  return{lbl:'AIG',tone:'normal'};
+}
+// Percentil do peso informado (g) pra uma GA em semanas+dias. Interpola no
+// espaço (ln(peso), z) entre os dois pontos de referência que cercam o peso;
+// fora de [P3,P90] estende a inclinação do segmento mais próximo em vez de
+// travar no limite, já que P3–P10–P50–P90 não formam uma curva log-normal
+// simétrica (não dá pra assumir um único desvio padrão).
+function calcPfePercentile(weeks,days,weightG){
+  const gaWeeks=weeks+days/7;
+  if(gaWeeks<20||gaWeeks>40+6/7||!weightG||weightG<50||weightG>6000)return null;
+  const[p3,p10,p50,p90]=pfeMixedRow(gaWeeks);
+  const lnP3=Math.log(p3),lnP10=Math.log(p10),lnP50=Math.log(p50),lnP90=Math.log(p90);
+  const lnW=Math.log(weightG);
+  const lerp=(x1,y1,x2,y2,x)=>y1+(y2-y1)*(x-x1)/(x2-x1);
+  let z;
+  if(lnW<=lnP10)z=lerp(lnP3,PFE_Z[0],lnP10,PFE_Z[1],lnW);
+  else if(lnW<=lnP50)z=lerp(lnP10,PFE_Z[1],lnP50,PFE_Z[2],lnW);
+  else z=lerp(lnP50,PFE_Z[2],lnP90,PFE_Z[3],lnW);
+  const percentile=Math.max(1,Math.min(99,Math.round(pfeNormalCdf(z)*100)));
+  return{percentile,median:Math.round(p50),classification:pfeClassify(percentile)};
+}
+
 const ULTRASSONS=[
   {weekStart:8,weekEnd:10,name:'Ultrassom inicial',periodo:'8 a 10 semanas',
     desc:'Confirma a idade gestacional, os batimentos cardíacos do bebê, a localização da gestação e o número de bebês.'},
@@ -2354,6 +2501,7 @@ function updateBabyLabels(ig){
   document.getElementById('weightEstRowB').classList.toggle('hidden',!growthTrackingOn);
 
   renderDiscordance();
+  renderWeightPercentiles();
 }
 function updateBabyNameUI(){
   document.getElementById('exmUsgTitle').innerHTML=profile.twins
@@ -2553,6 +2701,37 @@ function renderDiscordance(){
 document.getElementById('weightEstInpA').addEventListener('input',renderDiscordance);
 document.getElementById('weightEstInpB').addEventListener('input',renderDiscordance);
 
+/* ── Percentil de peso fetal estimado (PFE), a partir do peso informado
+   acima — usa a mesma IG dos dois bebês (ver nota no topo do arquivo:
+   gestação gemelar não tem tabela própria de percentil, então cada bebê é
+   avaliado contra a curva de gestação única, individualmente). Só é exibido
+   a partir de 22 semanas de IG — abaixo disso a estimativa de peso ainda
+   não é confiável o suficiente pra situar o bebê numa curva de percentil. */
+const PFE_UI_MIN_WEEKS=22;
+function renderWeightPercentile(letter,inputId,name){
+  const card=document.getElementById('pfeCard'+letter);
+  const gaWeeks=currentIG?currentIG.weeks+currentIG.days/7:0;
+  const weightG=parseFloat(document.getElementById(inputId).value);
+  const r=gaWeeks>=PFE_UI_MIN_WEEKS?calcPfePercentile(currentIG.weeks,currentIG.days,weightG):null;
+  if(!r){card.classList.add('hidden');return false;}
+  document.getElementById('pfeCardLbl'+letter).textContent=name;
+  document.getElementById('pfeNum'+letter).textContent=r.percentile;
+  document.getElementById('pfeDot'+letter).style.left=((r.percentile-1)/98*100)+'%';
+  document.getElementById('pfeMedian'+letter).textContent=r.median+' g';
+  const clsEl=document.getElementById('pfeClass'+letter);
+  clsEl.className='bmi-pill tone-'+r.classification.tone;
+  clsEl.textContent=r.classification.lbl;
+  card.classList.remove('hidden');
+  return true;
+}
+function renderWeightPercentiles(){
+  const showA=renderWeightPercentile('A','weightEstInpA',profile.name||'Bebê A');
+  const showB=renderWeightPercentile('B','weightEstInpB',profile.babyB.name||'Bebê B');
+  document.getElementById('pfeWrap').classList.toggle('hidden',!showA&&!showB);
+}
+document.getElementById('weightEstInpA').addEventListener('input',renderWeightPercentiles);
+document.getElementById('weightEstInpB').addEventListener('input',renderWeightPercentiles);
+
 /* ── Fertil dates ── */
 let diDates=['',''];
 function renderDi(){
@@ -2716,6 +2895,9 @@ function renderPregResult(ig,dpp,method,silent){
   ['femurInpA','femurInpB','weightEstInpA','weightEstInpB'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('femurResultA').classList.add('hidden');
   document.getElementById('femurResultB').classList.add('hidden');
+  document.getElementById('pfeCardA').classList.add('hidden');
+  document.getElementById('pfeCardB').classList.add('hidden');
+  document.getElementById('pfeWrap').classList.add('hidden');
   updateBabyLabels(ig);
 
   renderTimeline(ig);
