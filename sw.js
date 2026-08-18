@@ -1,4 +1,4 @@
-const CACHE_NAME='mkduo-v1';
+const CACHE_NAME='mkduo-v2';
 const CORE_ASSETS=[
   './manifest.webmanifest',
   './icon-192.png',
