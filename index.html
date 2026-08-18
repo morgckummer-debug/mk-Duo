@@ -375,6 +375,7 @@ body::after{
   box-shadow:var(--ci);transition:background .3s;
 }
 .helper strong{color:var(--ink)}
+.field-hint{font-size:11.5px;color:var(--ink2);margin:-6px 0 14px;min-height:14px}
 
 /* ── Calc button ── */
 .btn-calc{
@@ -745,6 +746,7 @@ body::after{
 .resumo-brand{font-family:'Fraunces',serif;font-size:19px;font-weight:500;color:var(--ink)}
 .resumo-brand span{color:var(--pd2)}
 .resumo-mast-meta{font-size:10.5px;color:var(--ink3);text-align:right;line-height:1.5}
+.resumo-patient{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:2px}
 
 /* Card de destaque com a idade gestacional — igual ao clima do card
    principal da aba Resultado, só que compacto pra caber no resumo. */
@@ -821,6 +823,7 @@ body::after{
   #resumoSheet .resumo-mast{margin-bottom:8px}
   #resumoSheet .resumo-brand{font-size:15px}
   #resumoSheet .resumo-mast-meta{font-size:8.5px}
+  #resumoSheet .resumo-patient{font-size:10.5px}
 
   #resumoSheet .resumo-sec{margin-top:10px;break-inside:avoid}
   #resumoSheet .resumo-sec-title{font-size:12px;margin-bottom:4px;padding-bottom:3px}
@@ -1829,10 +1832,14 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
     <div class="card">
       <div class="lbl">Seus dados</div>
       <div class="card-title" style="font-size:17px">Como podemos te <span class="serif" style="color:var(--pd);font-style:italic">chamar?</span></div>
-      <div class="field"><label>Seu nome</label>
-        <input class="inp" type="text" id="motherNameInp" placeholder="Ex: Camila">
+      <div class="field"><label>Seu nome completo</label>
+        <input class="inp" type="text" id="motherNameInp" placeholder="Ex: Camila Kummer">
       </div>
-      <div class="helper">Usado só pra personalizar o resumo que você mostra ou imprime pro seu obstetra.</div>
+      <div class="field" style="margin-bottom:6px"><label>Sua data de nascimento</label>
+        <input class="inp" type="text" id="motherBirthInp" placeholder="DD/MM/AAAA" maxlength="10" inputmode="numeric">
+      </div>
+      <div class="field-hint" id="motherAgeTxt"></div>
+      <div class="helper">Usado só pra identificar você no resumo que mostra ou imprime pro seu obstetra — nome e idade, calculada automaticamente pela data de nascimento.</div>
     </div>
 
     <div class="card feat">
@@ -2154,6 +2161,15 @@ function parseBR(s){
   if(d.getFullYear()!==year||d.getMonth()+1!==month||d.getDate()!==day)return null;
   return iso;
 }
+// Idade em anos completos a partir de uma data de nascimento ISO (YYYY-MM-DD).
+function calcAge(iso){
+  if(!iso)return null;
+  const birth=new Date(iso+'T12:00:00');
+  let age=TODAY.getFullYear()-birth.getFullYear();
+  const hadBirthdayThisYear=(TODAY.getMonth()>birth.getMonth())||(TODAY.getMonth()===birth.getMonth()&&TODAY.getDate()>=birth.getDate());
+  if(!hadBirthdayThisYear)age--;
+  return age;
+}
 function igFromLMP(s){
   const lmp=new Date(s+'T12:00:00');
   const days=diffDaysUTC(lmp,TODAY);
@@ -2412,7 +2428,7 @@ document.getElementById('darkBtn').addEventListener('click',()=>{
    voltar pra gestação única (isso já existe no MKCalc original). */
 const PROFILE_KEY='mkcalc_profile';
 function loadProfile(){
-  const base={motherName:'',name:'',sex:'',twins:true,chorionicity:null,babyB:{name:'',sex:''}};
+  const base={motherName:'',motherBirthDate:'',name:'',sex:'',twins:true,chorionicity:null,babyB:{name:'',sex:''}};
   try{
     const raw=localStorage.getItem(PROFILE_KEY);
     const p=raw?JSON.parse(raw):{};
@@ -2443,6 +2459,8 @@ function applyProfileTheme(){
 }
 function renderProfileUI(){
   document.getElementById('motherNameInp').value=profile.motherName||'';
+  document.getElementById('motherBirthInp').value=profile.motherBirthDate?profile.motherBirthDate.split('-').reverse().join('/'):'';
+  renderMotherAge();
   document.getElementById('babyNameInp').value=profile.name||'';
   document.getElementById('babyNameInpB').value=profile.babyB.name||'';
   document.getElementById('babyNameLblA').textContent='Nome do Bebê A';
@@ -2512,6 +2530,17 @@ function updateBabyNameUI(){
 document.getElementById('motherNameInp').addEventListener('input',e=>{
   profile.motherName=e.target.value;
   saveProfile();
+});
+function renderMotherAge(){
+  const txt=document.getElementById('motherAgeTxt');
+  const age=calcAge(profile.motherBirthDate);
+  txt.textContent=(age!=null&&age>=0&&age<130)?`${age} anos`:'';
+}
+applyMask(document.getElementById('motherBirthInp'));
+document.getElementById('motherBirthInp').addEventListener('input',e=>{
+  profile.motherBirthDate=e.target.value.length===10?(parseBR(e.target.value)||''):'';
+  saveProfile();
+  renderMotherAge();
 });
 document.getElementById('babyNameInp').addEventListener('input',e=>{
   profile.name=e.target.value;
@@ -4176,6 +4205,8 @@ function renderResumoBody(){
   const rangeLbl=resumoRangeDays?`últimos ${resumoRangeDays} dias`:'todo o histórico';
 
   const motherName=(profile.motherName||'').trim();
+  const motherAge=calcAge(profile.motherBirthDate);
+  const patientLine=motherName?`${motherName}${motherAge!=null&&motherAge>=0&&motherAge<130?` · ${motherAge} anos`:''}`:'';
   let heroHtml='<div class="resumo-empty">Nenhum cálculo de idade gestacional ainda.</div>';
   if(currentIG&&saved){
     const dpp=dppFromLMP(saved.lmp);
@@ -4244,7 +4275,7 @@ function renderResumoBody(){
   body.innerHTML=`
     <div class="resumo-mast">
       <div class="resumo-brand">MK<span>Duo</span></div>
-      <div class="resumo-mast-meta">Gerado em ${fmt(new Date())}<br>${currentUser&&currentUser.email?currentUser.email:''}</div>
+      <div class="resumo-mast-meta">${patientLine?`<div class="resumo-patient">${patientLine}</div>`:''}Gerado em ${fmt(new Date())}<br>${currentUser&&currentUser.email?currentUser.email:''}</div>
     </div>
     <div class="resumo-hero">${heroHtml}</div>
 
@@ -4290,7 +4321,7 @@ const ONBOARDING_STEPS=[
   {ico:TWIN_HEARTS_SVG,title:'Bem-vinda ao MK-Duo!',desc:'O app pra acompanhar sua <strong>gestação gemelar</strong>: idade gestacional, os dois bebês, exames adaptados à corionicidade e muito mais.'},
   {ico:'📅',title:'Qual sua idade gestacional?',desc:'Você pode informar pela <strong>DUM</strong>, pelo <strong>1º ultrassom</strong> ou pela <strong>DPP</strong>. A partir daí, o app calcula sua idade gestacional sozinho — sempre atualizada, toda vez que você abrir.',cta:'Informar agora',ctaPage:'calc'},
   {ico:'🧭',title:'Use as abas aqui embaixo',desc:'Calcular, Resultado, Exames e Checklist ficam sempre a um toque de distância, na barra de navegação.'},
-  {ico:'🧸',title:'Personalize na aba Perfil',desc:'Coloque aqui o nome e o sexo de cada bebê, e a <strong>corionicidade</strong> da gestação — se ainda não souber, dá pra deixar em branco por enquanto.'},
+  {ico:'🧸',title:'Personalize na aba Perfil',desc:'Coloque aqui o seu nome completo e data de nascimento (o resumo pra consulta já mostra sua idade automaticamente), o nome e sexo de cada bebê, e a <strong>corionicidade</strong> da gestação — se ainda não souber a corionicidade, dá pra deixar em branco por enquanto.',cta:'Preencher agora',ctaPage:'profile'},
   {ico:'✨',title:'Pronto!',desc:'Você já pode começar. Sempre que quiser rever este tutorial, é só tocar no <span class="onb-help-mark">?</span> lá em cima. Começando uma <strong>nova gestação</strong>? Na aba Perfil tem a opção "Começar nova gestação", que apaga os dados antigos pra você recomeçar do zero.'}
 ];
 let onbStep=0;
@@ -4308,6 +4339,7 @@ function renderOnb(){
       onbPendingResume=true;
       goToPage(s.ctaPage);
       if(s.ctaPage==='calc')setTimeout(()=>document.getElementById('lmpInp').focus(),320);
+      if(s.ctaPage==='profile')setTimeout(()=>document.getElementById('motherNameInp').focus(),320);
     });
   }
   document.getElementById('onbDots').innerHTML=ONBOARDING_STEPS.map((_,i)=>`<span class="onb-dot${i===onbStep?' on':''}"></span>`).join('');
