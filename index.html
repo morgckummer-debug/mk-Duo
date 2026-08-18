@@ -753,11 +753,12 @@ body::after{
   border-radius:var(--r);padding:20px 22px;margin-bottom:18px;box-shadow:var(--cs);
 }
 .resumo-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pd2)}
-.resumo-hero-title{
-  font-family:'Fraunces',serif;font-size:22px;font-weight:500;color:var(--ink);
-  line-height:1.2;margin:6px 0 16px;text-wrap:balance;
+.resumo-hero-name{
+  font-family:'Fraunces',serif;font-size:22px;font-weight:600;color:var(--ink);
+  line-height:1.2;margin:6px 0 4px;text-wrap:balance;
 }
-.resumo-hero-title em{font-style:italic;color:var(--pd2)}
+.resumo-hero-ig{font-size:15px;font-weight:700;color:var(--pd2);margin-bottom:3px}
+.resumo-hero-base{font-size:12.5px;color:var(--ink2);margin-bottom:14px}
 .resumo-hero-stats{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:10px}
 .rhs-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2);opacity:.8;margin-bottom:2px}
 .rhs-val{font-size:13.5px;font-weight:700;color:var(--ink)}
@@ -813,7 +814,9 @@ body::after{
   .no-print{display:none!important}
 
   #resumoSheet .resumo-hero{padding:14px 18px;margin-bottom:12px;border-radius:14px}
-  #resumoSheet .resumo-hero-title{font-size:17px;margin:4px 0 10px}
+  #resumoSheet .resumo-hero-name{font-size:17px;margin:4px 0 3px}
+  #resumoSheet .resumo-hero-ig{font-size:12.5px;margin-bottom:2px}
+  #resumoSheet .resumo-hero-base{font-size:10px;margin-bottom:10px}
   #resumoSheet .resumo-hero-stats{gap:18px;margin-bottom:6px}
   #resumoSheet .rhs-lbl{font-size:8.5px}
   #resumoSheet .rhs-val{font-size:11px}
@@ -4197,6 +4200,41 @@ function resumoWeightChart(entries){
     </div>
     <div class="resumo-note">Ganho no período: ${gain>=0?'+':''}${fmtKg(gain)}</div>`;
 }
+/* Pressão em gráfico de linha, mesmo tratamento visual do gráfico de peso
+   (degradê sombreando a área abaixo da linha) — sistólica em traço cheio
+   com a área sombreada, diastólica em traço tracejado por cima. */
+function resumoBPChart(entries){
+  if(entries.length<2)return'';
+  const pts=entries;
+  const sysVals=pts.map(p=>p.sys),diaVals=pts.map(p=>p.dia);
+  const lo=Math.min(...diaVals)-8,hi=Math.max(...sysVals)+8;
+  const H=120,padX=4,padY=12;
+  const GAP=100,MIN_W=240,MAX_W=680;
+  const W=Math.min(MAX_W,Math.max(MIN_W,GAP*(pts.length-1)+padX*2));
+  const xAt=i=>padX+(i/(pts.length-1))*(W-padX*2);
+  const yAt=v=>padY+(1-((v-lo)/((hi-lo)||1)))*(H-padY*2);
+  const sysPathD=pts.map((p,i)=>`${i===0?'M':'L'}${xAt(i).toFixed(1)},${yAt(p.sys).toFixed(1)}`).join(' ');
+  const diaPathD=pts.map((p,i)=>`${i===0?'M':'L'}${xAt(i).toFixed(1)},${yAt(p.dia).toFixed(1)}`).join(' ');
+  const sysAreaD=`${sysPathD} L${xAt(pts.length-1).toFixed(1)},${H-padY} L${xAt(0).toFixed(1)},${H-padY} Z`;
+  const sysDots=pts.map((p,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(p.sys).toFixed(1)}" r="${i===pts.length-1?4:2.6}" fill="var(--pd2)"/>`).join('');
+  const diaDots=pts.map((p,i)=>`<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(p.dia).toFixed(1)}" r="${i===pts.length-1?4:2.6}" fill="var(--pd)"/>`).join('');
+  const first=pts[0],last=pts[pts.length-1];
+  return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMinYMid meet" style="width:${W}px;max-width:100%;height:${H}px;display:block">
+      <defs><linearGradient id="resBpGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--pd)" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="var(--pd)" stop-opacity="0"/>
+      </linearGradient></defs>
+      <path d="${sysAreaD}" fill="url(#resBpGrad)" stroke="none"/>
+      <path d="${diaPathD}" fill="none" stroke="var(--pd)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="4 3"/>
+      <path d="${sysPathD}" fill="none" stroke="var(--pd2)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      ${diaDots}${sysDots}
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--ink3);margin-top:2px;width:${W}px;max-width:100%">
+      <span>${fmt(new Date(first.date))} · ${fmtBP(first.sys,first.dia)}</span>
+      <span>${fmt(new Date(last.date))} · ${fmtBP(last.sys,last.dia)}</span>
+    </div>
+    <div class="resumo-note"><span style="color:var(--pd2);font-weight:700">●</span> Sistólica &nbsp; <span style="color:var(--pd);font-weight:700">- -</span> Diastólica</div>`;
+}
 function renderResumoBody(){
   const body=document.getElementById('resumoBody');
   const saved=loadPregnancy();
@@ -4210,7 +4248,6 @@ function renderResumoBody(){
     const dpp=dppFromLMP(saved.lmp);
     const chorName=profile.chorionicity?CHOR_NAMES[profile.chorionicity]:null;
     const surv=profile.chorionicity?SURV_COPY[profile.chorionicity]:null;
-    const titleLead=motherName?`${motherName}, você está com`:'Você está com';
     /* O obstetra quer ver a base do cálculo, não só o nome do método —
        se foi por DUM, a data da DUM; se foi por ultrassom, a data do
        exame e a IG observada nele (guardadas à parte em runCalc, já
@@ -4219,16 +4256,17 @@ function renderResumoBody(){
     if(saved.method==='DUM'){
       baseCalc=`DUM · ${fmt(new Date(saved.lmp+'T12:00:00'))}`;
     }else if(saved.method==='Ultrassom'&&saved.usgDate){
-      baseCalc=`USG · ${fmt(new Date(saved.usgDate+'T12:00:00'))} (${saved.usgWeeks}s${saved.usgDays||0}d)`;
+      baseCalc=`1º ultrassom · ${fmt(new Date(saved.usgDate+'T12:00:00'))} (${saved.usgWeeks}s${saved.usgDays||0}d)`;
     }else if(saved.method==='DPP'){
       baseCalc='DPP informada diretamente';
     }
     heroHtml=`
       <div class="resumo-eyebrow">Resumo pra consulta</div>
-      <div class="resumo-hero-title">${titleLead} <em>${formatWeeksText(currentIG.weeks,currentIG.days)}</em></div>
+      <div class="resumo-hero-name">${motherName||'Paciente'}</div>
+      <div class="resumo-hero-ig">${formatWeeksText(currentIG.weeks,currentIG.days)}</div>
+      <div class="resumo-hero-base">Base de datação: ${baseCalc}</div>
       <div class="resumo-hero-stats">
         <div><div class="rhs-lbl">DPP</div><div class="rhs-val">${fmt(dpp)}</div></div>
-        <div><div class="rhs-lbl">Base de cálculo</div><div class="rhs-val">${baseCalc}</div></div>
         ${chorName?`<div><div class="rhs-lbl">Corionicidade</div><div class="rhs-val">${chorName}</div></div>`:''}
       </div>
       ${surv?`<div class="resumo-chor-pill">${surv.html.replace(/^[🟢🟠🔴]\s*/u,'')}</div>`:''}`;
@@ -4243,7 +4281,7 @@ function renderResumoBody(){
     const alert=cls.tone==='over'||cls.tone==='ob';
     return `<tr><td>${fmt(new Date(b.date))}</td><td>${fmtClock(new Date(b.date))}</td><td${alert?' class="alert"':''}>${fmtBP(b.sys,b.dia)}</td></tr>`;
   });
-  const bpHtml=resumoTable(['Data','Hora','PA'],bpRows)+'<div class="resumo-note">Destacado: sistólica ≥140 ou diastólica ≥90 mmHg.</div>';
+  const bpHtml=resumoBPChart(bpFiltered)+resumoTable(['Data','Hora','PA'],bpRows)+'<div class="resumo-note">Destacado: sistólica ≥140 ou diastólica ≥90 mmHg.</div>';
 
   /* Uma linha por dia, uma coluna por momento — é assim que um diário
      glicêmico costuma ser lido na consulta. Se houver mais de uma medição
