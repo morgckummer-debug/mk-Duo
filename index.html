@@ -390,6 +390,16 @@ body::after{
 .btn-calc:hover{transform:scale(1.02);box-shadow:6px 9px 20px rgba(168,134,100,.3)}
 .btn-calc:active{transform:scale(.96)}
 
+/* ── Conta (login/sincronização) ── */
+.acct-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.acct-info-box{
+  background:rgba(255,250,240,.55);border-radius:16px;padding:14px 12px;text-align:center;
+  box-shadow:inset 2px 2px 6px rgba(168,134,100,.14),inset -2px -2px 6px rgba(255,250,240,.5);
+}
+[data-dark] .acct-info-box{background:rgba(0,0,0,.18);box-shadow:none}
+.acct-info-box .rhs-lbl{margin-bottom:4px}
+.acct-info-box .rhs-val{word-break:break-word}
+
 /* ── Nova gestação (reset) ── */
 .btn-danger{
   width:100%;padding:16px;border-radius:var(--pill);
@@ -1893,10 +1903,14 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
       </div>
     </div>
 
-    <div class="card">
-      <div class="lbl">Conta</div>
-      <div class="card-title" style="font-size:17px">Sua <span class="serif" style="color:var(--pd);font-style:italic">conta</span></div>
-      <div class="helper">Seus dados ficam salvos com segurança, mesmo se você trocar de celular.</div>
+    <div class="card feat">
+      <div class="lbl">👤 Conta</div>
+      <div class="card-title" style="font-size:17px">Sincronize seus <span class="serif" style="color:var(--pd);font-style:italic">dados</span></div>
+      <div class="helper">Crie uma conta pra não perder o nome, o sexo do bebê e a data base da gestação ao trocar de aparelho. Os registros do dia a dia (peso, pressão, glicemia, checklist etc.) continuam salvos só neste aparelho.</div>
+      <div class="acct-info-grid">
+        <div class="acct-info-box"><div class="rhs-lbl">Logada como</div><div class="rhs-val" id="acctEmailVal">—</div></div>
+        <div class="acct-info-box"><div class="rhs-lbl">Sincronização</div><div class="rhs-val" id="acctSyncVal">—</div></div>
+      </div>
       <button class="btn-danger" id="logoutBtn">Sair da conta</button>
     </div>
 
@@ -2469,6 +2483,8 @@ function renderProfileUI(){
   document.querySelectorAll('#sexTabs .stab').forEach(b=>b.classList.toggle('on',b.dataset.sex===profile.sex));
   document.querySelectorAll('#sexTabsB .stab').forEach(b=>b.classList.toggle('on',b.dataset.sex===profile.babyB.sex));
   document.querySelectorAll('#chorList .chor-card').forEach(c=>c.classList.toggle('on',c.dataset.chor===profile.chorionicity));
+  document.getElementById('acctEmailVal').textContent=currentUser&&currentUser.email?currentUser.email:'—';
+  document.getElementById('acctSyncVal').textContent=currentUser?'Ativa':'—';
 }
 function babyNameHTML(name){
   return `<strong class="baby-name-em">${(name||'').toUpperCase()}</strong>`;
