@@ -4523,6 +4523,17 @@ function ensurePremiumOverlay(el,compact){
   el.appendChild(ov);
 }
 
+/* Some sem a classe premium-locked, o overlay (posicionado absolute,
+   inset:0) perde a referência de posicionamento do pai — sem isso ele fica
+   solto na página, alinhado ao ancestral posicionado mais próximo, o que
+   pode fazer o cadeado "flutuar" sobre outra parte da tela completamente
+   diferente do card que ele deveria travar. Por isso remove o elemento de
+   verdade, não só a classe do pai. */
+function removePremiumOverlay(el){
+  const ov=el.querySelector(':scope > .premium-overlay');
+  if(ov)ov.remove();
+}
+
 /* Aplica (ou remove) o bloqueio visual em todos os pontos premium do app.
    Chamada no login, depois de checar o status, e de novo sempre que os
    cards em questão são re-renderizados (discordância, cronograma). */
@@ -4540,11 +4551,13 @@ function applyPremiumGate(){
   if(twin){
     twin.classList.toggle('premium-locked',!isPremium);
     if(!isPremium)ensurePremiumOverlay(twin);
+    else removePremiumOverlay(twin);
   }
   const discord=document.getElementById('discordCard');
   if(discord){
     discord.classList.toggle('premium-locked',!isPremium);
     if(!isPremium)ensurePremiumOverlay(discord,true);
+    else removePremiumOverlay(discord);
   }
   updateTrialBanner();
 }
