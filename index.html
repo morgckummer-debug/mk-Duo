@@ -225,6 +225,7 @@ body::after{
    ancestrais por padrão, então dentro do cabeçalho comprimido (um <button>)
    o navegador aplicava sua cor nativa de botão em vez do tom da paleta. */
 .card-title{font-family:'Fraunces',serif;font-size:24px;font-weight:500;letter-spacing:-.02em;line-height:1.1;margin-bottom:18px;color:var(--ink);transition:color .3s}
+#exmUsgTitle{font-size:27px;font-weight:700}
 
 /* ── Bloqueio Premium ──
    Dois estilos: (1) "blur" pros cards que mostram um preview de conteúdo
@@ -659,7 +660,8 @@ body::after{
 
 .exm-list{display:flex;flex-direction:column;gap:10px}
 .exm-card{
-  display:block;width:100%;text-align:left;border:none;background:var(--surf);
+  display:block;width:100%;text-align:left;background:var(--surf);
+  border:1px solid var(--line);
   border-radius:18px;padding:14px 16px;box-shadow:var(--cs);cursor:pointer;
   transition:var(--trans);
 }
@@ -2320,6 +2322,10 @@ const ULTRASSONS=[
   {weekStart:12,weekEnd:13+6/7,name:'Ultrassom Morfológico do 1º trimestre',periodo:'12 semanas a 13 semanas e 6 dias',
     desc:'Avalia detalhadamente o desenvolvimento do bebê e ajuda no rastreamento de algumas alterações cromossômicas e malformações. Durante esse exame também é feita a medida da translucência nucal (TN) e o rastreamento do risco de pré-eclâmpsia.',
     nota:'Esse exame não é a mesma coisa que "Translucência Nucal" isoladamente — a TN faz parte dele, mas o Morfológico do 1º trimestre é bem mais completo.'},
+  {weekStart:16,weekEnd:18,name:'Ultrassom Pré-morfológico',periodo:'16 a 18 semanas',
+    desc:'Não faz parte do pré-natal convencional, mas vem sendo cada vez mais solicitado como uma avaliação intermediária entre o Morfológico do 1º e do 2º trimestre. É nele que costuma ser feita a confirmação do sexo do bebê, caso não tenha sido possível no Morfológico do 1º trimestre.',
+    indicacao:'Não é um exame de rotina do pré-natal — é pedido a critério do obstetra, conforme a avaliação de cada gestação.',
+    nota:'Em gestações monocoriônicas, esse período é crucial para o rastreamento da Síndrome de Transfusão Feto-Fetal (STFF) — nesses casos, o acompanhamento costuma ser mais próximo, com ultrassons a cada 2 semanas (ver Rastreio de STFF, na aba Gestação gemelar).'},
   {weekStart:22,weekEnd:24,name:'Ultrassom Morfológico do 2º trimestre',periodo:'22 a 24 semanas',
     desc:'Avalia detalhadamente a anatomia do bebê, o crescimento, a placenta, o líquido amniótico e faz o rastreamento do parto prematuro através da medida do colo do útero por via vaginal.'},
   {weekStart:24,weekEnd:30,name:'Ecocardiograma Fetal',periodo:'24 a 30 semanas',
@@ -2397,14 +2403,14 @@ const CHECKLIST=[
    usada em examDone (ver renderExamGuide/examCard). */
 const CHECKLIST_EXAM_LINK={
   '0-6':'usg-1', // Ultrassom Morfológico do 1º trimestre
-  '1-1':'usg-2', // USG Morfológico do 2º trimestre
+  '1-1':'usg-3', // USG Morfológico do 2º trimestre
   '1-2':'vac-2', // Vacina dTpa
   '1-3':'lab-1', // Curva glicêmica (TOTG)
   '2-0':'lab-2', // Hemograma + Coombs (28 semanas)
   '2-1':'vac-3', // Vacina da Bronquiolite (VSR)
-  '2-2':'usg-4', // USG de crescimento (Doppler)
+  '2-2':'usg-5', // USG de crescimento (Doppler)
   '2-3':'lab-3', // Exame do Cotonete
-  '2-4':'usg-5'  // Perfil Biofísico Fetal (PBF)
+  '2-4':'usg-6'  // Perfil Biofísico Fetal (PBF)
 };
 
 /* ── Toast ── */
@@ -3913,9 +3919,12 @@ function renderTOTGResult(){
       }).join('')}
     </div>
     <div class="wg-summary">
-      <div class="wg-summary-top"><div class="wg-summary-val">${altered?'⚠️ Resultado alterado':'✅ Dentro da normalidade'}</div></div>
+      <div class="wg-summary-top">
+        <div class="wg-summary-val">${altered?'⚠️ Resultado alterado':'✅ Dentro da normalidade'}</div>
+        ${altered?'<span class="bmi-pill tone-ob">Diabetes Gestacional</span>':''}
+      </div>
       <div class="wg-summary-txt">${altered
-        ?'Pelos critérios da IADPSG, basta <strong>1 valor</strong> igual ou acima do ponto de corte pra fechar o diagnóstico de diabetes gestacional. Leve esse resultado ao seu obstetra.'
+        ?'Pelos critérios da IADPSG, basta <strong>1 valor</strong> igual ou acima do ponto de corte pra fechar o diagnóstico de <strong>diabetes gestacional</strong>. Leve esse resultado ao seu obstetra.'
         :'Os 3 valores ficaram dentro da faixa considerada normal pelos critérios da IADPSG.'}</div>
     </div>
     <div class="exm-cta" id="totgEditBtn" style="margin-top:14px">
