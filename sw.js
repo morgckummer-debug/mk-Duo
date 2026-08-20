@@ -1,13 +1,7 @@
-const CACHE_NAME='mkduo-v2';
+const CACHE_NAME='mkduo-v3';
 const CORE_ASSETS=[
   './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png',
-  './apple-touch-icon.png',
-  './favicon-32.png',
-  './favicon-16.png',
-  './favicon.ico',
-  './logo.png'
+  './icon.png'
 ];
 
 self.addEventListener('install',e=>{
