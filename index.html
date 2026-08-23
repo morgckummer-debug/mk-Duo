@@ -1472,6 +1472,23 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
           <span class="duo-badge" id="duoBadgeB">🩷 Bebê B</span>
         </div>
 
+        <!-- O peso estimado vem do laudo do ultrassom, que costuma ser de alguns
+             dias (ou semanas) antes do dia em que ela abre o app. O percentil só
+             faz sentido contra a IG do dia do exame, então ela pode ajustar aqui.
+             É uma IG só: os dois bebês são medidos no mesmo ultrassom. -->
+        <div class="femur-calc" id="pfeGaBox">
+          <div class="femur-title">Qual a idade gestacional do ultrassom?</div>
+          <div class="femur-sub">Já vem preenchida com a IG de hoje. Se o exame foi em outro dia, ajuste aqui — vale pros dois bebês.</div>
+          <div class="row2" style="margin-top:10px">
+            <div class="field" style="margin-bottom:0"><label>Semanas</label>
+              <input class="inp" type="number" id="pfeWeeksInp" placeholder="ex: 32" min="20" max="40" inputmode="numeric">
+            </div>
+            <div class="field" style="margin-bottom:0"><label>Dias</label>
+              <input class="inp" type="number" id="pfeDaysInp" placeholder="0–6" min="0" max="6" inputmode="numeric">
+            </div>
+          </div>
+        </div>
+
         <div class="baby-diptych" id="babyDiptych">
           <div class="baby-half baby-half-a">
             <span class="baby-mono hidden" id="babyMonoA">A</span>
@@ -1488,7 +1505,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
                 <input class="inp" type="number" id="weightEstInpA" placeholder="Peso estimado" step="1" min="0" inputmode="decimal">
                 <span class="femur-unit">g</span>
               </div>
-              <div class="pfe-hint">Percentil de peso calculado a partir de 22 semanas de IG.</div>
+              <div class="pfe-hint">Percentil calculado com a IG do ultrassom informada acima, a partir de 22 semanas.</div>
             </div>
           </div>
 
@@ -1509,7 +1526,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
                 <input class="inp" type="number" id="weightEstInpB" placeholder="Peso estimado" step="1" min="0" inputmode="decimal">
                 <span class="femur-unit">g</span>
               </div>
-              <div class="pfe-hint">Percentil de peso calculado a partir de 22 semanas de IG.</div>
+              <div class="pfe-hint">Percentil calculado com a IG do ultrassom informada acima, a partir de 22 semanas.</div>
             </div>
           </div>
         </div>
@@ -2791,11 +2808,22 @@ document.getElementById('weightEstInpB').addEventListener('input',renderDiscorda
    a partir de 22 semanas de IG — abaixo disso a estimativa de peso ainda
    não é confiável o suficiente pra situar o bebê numa curva de percentil. */
 const PFE_UI_MIN_WEEKS=22;
+/* IG usada no percentil: a que ela informou pro ultrassom. Cada campo vazio
+   (ou fora da faixa) cai de volta pra IG de hoje, pra nunca ficar sem base. */
+function pfeExamIG(){
+  if(!currentIG)return null;
+  let weeks=parseInt(document.getElementById('pfeWeeksInp').value,10);
+  let days=parseInt(document.getElementById('pfeDaysInp').value,10);
+  if(!Number.isFinite(weeks)||weeks<0||weeks>42)weeks=currentIG.weeks;
+  if(!Number.isFinite(days)||days<0||days>6)days=currentIG.days;
+  return{weeks,days};
+}
 function renderWeightPercentile(letter,inputId,name){
   const card=document.getElementById('pfeCard'+letter);
-  const gaWeeks=currentIG?currentIG.weeks+currentIG.days/7:0;
+  const exam=pfeExamIG();
+  const gaWeeks=exam?exam.weeks+exam.days/7:0;
   const weightG=parseFloat(document.getElementById(inputId).value);
-  const r=gaWeeks>=PFE_UI_MIN_WEEKS?calcPfePercentile(currentIG.weeks,currentIG.days,weightG):null;
+  const r=gaWeeks>=PFE_UI_MIN_WEEKS?calcPfePercentile(exam.weeks,exam.days,weightG):null;
   if(!r){card.classList.add('hidden');return false;}
   document.getElementById('pfeCardLbl'+letter).textContent=name;
   document.getElementById('pfeNum'+letter).textContent=r.percentile;
@@ -2814,6 +2842,9 @@ function renderWeightPercentiles(){
 }
 document.getElementById('weightEstInpA').addEventListener('input',renderWeightPercentiles);
 document.getElementById('weightEstInpB').addEventListener('input',renderWeightPercentiles);
+['pfeWeeksInp','pfeDaysInp'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',renderWeightPercentiles);
+});
 
 /* ── Fertil dates ── */
 let diDates=['',''];
@@ -2976,6 +3007,8 @@ function renderPregResult(ig,dpp,method,silent){
     <div class="stat"><div class="lbl">Faltam</div><div class="val serif">${Math.max(0,GESTATION_DAYS-ig.totalDays)} dias</div></div>`;
 
   ['femurInpA','femurInpB','weightEstInpA','weightEstInpB'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pfeWeeksInp').value=ig.weeks;
+  document.getElementById('pfeDaysInp').value=ig.days;
   document.getElementById('femurResultA').classList.add('hidden');
   document.getElementById('femurResultB').classList.add('hidden');
   document.getElementById('pfeCardA').classList.add('hidden');
