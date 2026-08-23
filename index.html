@@ -3434,6 +3434,21 @@ let contrSessionBreakAt=loadContrSessionBreak();
 function fmtClock(d){
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
+
+/* ── Período do dia de uma aferição (pressão e glicemia) ──
+   Manhã 06:00–11:59 · Tarde 12:00–17:59 · Noite 18:00–05:59. A madrugada
+   entra na noite: quem afere às 3h da manhã está aferindo de noite, não
+   começando o dia. A linha da tabela continua sendo o dia do calendário em
+   que a medida foi registrada — uma medida das 2h do dia 24 aparece na
+   noite do dia 24, não na do dia anterior. */
+const DAY_PERIODS=[{k:'manha',lbl:'Manhã'},{k:'tarde',lbl:'Tarde'},{k:'noite',lbl:'Noite'}];
+function dayPeriodOf(d){
+  const h=d.getHours();
+  if(h<6)return'noite';
+  if(h<12)return'manha';
+  if(h<18)return'tarde';
+  return'noite';
+}
 function fmtGap(ms){
   if(ms==null)return'—';
   const totalMin=Math.round(ms/60000);
@@ -4090,9 +4105,11 @@ renderTOTGCard();
    gestacional ou prévia. Por isso guarda um histórico, igual peso e
    pressão, em vez de um resultado único. Metas de referência da ADA pra
    controle diário (não confundir com os cortes diagnósticos do TOTG). */
+const PERIOD_NOTE='Manhã 6h–12h · Tarde 12h–18h · Noite 18h–6h.';
 const GLIC_KEY='mkcalc_glicemia_v1';
 const GLIC_CUTOFFS={jejum:95,'1h':140,'2h':120};
 const GLIC_CONTEXTS=[{k:'jejum',lbl:'Jejum'},{k:'1h',lbl:'1h pós-refeição'},{k:'2h',lbl:'2h pós-refeição'}];
+const GLIC_CTX_ABBR={jejum:'J','1h':'1h','2h':'2h'};
 function glicCtxLbl(k){return GLIC_CONTEXTS.find(c=>c.k===k)?.lbl||k;}
 function loadGlic(){
   try{const raw=localStorage.getItem(GLIC_KEY);return raw?JSON.parse(raw):[];}
@@ -4304,19 +4321,13 @@ function renderResumoBody(){
      explícito, só o período do dia em que a aferição caiu. Mais de uma
      medição no mesmo período/dia aparece separada por "/" na mesma célula,
      igual ao padrão já usado na glicemia. */
-  function bpPeriodOf(d){
-    const h=d.getHours();
-    if(h<12)return'manha';
-    if(h<18)return'tarde';
-    return'noite';
-  }
   const bpFiltered=filterByPeriod(bpEntries,resumoRangeDays,'date');
   const bpByDate=new Map();
   bpFiltered.forEach(b=>{
     const d=new Date(b.date);
     const dayKey=toISO(d);
     if(!bpByDate.has(dayKey))bpByDate.set(dayKey,{date:d,manha:[],tarde:[],noite:[]});
-    bpByDate.get(dayKey)[bpPeriodOf(d)].push(b);
+    bpByDate.get(dayKey)[dayPeriodOf(d)].push(b);
   });
   function bpCell(items){
     if(!items.length)return'<td>—</td>';
@@ -4324,9 +4335,9 @@ function renderResumoBody(){
     return `<td class="resumo-pa${alert?' alert':''}">${items.map(b=>fmtBP(b.sys,b.dia)).join(' / ')}</td>`;
   }
   const bpRows=[...bpByDate.values()].sort((a,b)=>b.date-a.date).map(d=>
-    `<tr><td>${fmt(d.date)}</td>${bpCell(d.manha)}${bpCell(d.tarde)}${bpCell(d.noite)}</tr>`
+    `<tr><td>${fmt(d.date)}</td>${DAY_PERIODS.map(p=>bpCell(d[p.k])).join('')}</tr>`
   );
-  const bpHtml=resumoTable(['Data','Manhã','Tarde','Noite'],bpRows)+'<div class="resumo-note">Destacado: sistólica ≥140 ou diastólica ≥90 mmHg.</div>';
+  const bpHtml=resumoTable(['Data',...DAY_PERIODS.map(p=>p.lbl)],bpRows)+`<div class="resumo-note">${PERIOD_NOTE} Destacado: sistólica ≥140 ou diastólica ≥90 mmHg.</div>`;
 
   /* Glicemia capilar só entra no resumo quando há diagnóstico de diabetes
      gestacional pelo TOTG (IADPSG) ou diabetes prévia informada no perfil —
@@ -4342,19 +4353,24 @@ function renderResumoBody(){
     const glicFiltered=filterByPeriod(glicEntries,resumoRangeDays,'date');
     const glicByDate=new Map();
     glicFiltered.forEach(g=>{
-      const dayKey=toISO(new Date(g.date));
-      if(!glicByDate.has(dayKey))glicByDate.set(dayKey,{date:new Date(g.date),jejum:[],'1h':[],'2h':[]});
-      glicByDate.get(dayKey)[g.context].push(g.value);
+      const d=new Date(g.date);
+      const dayKey=toISO(d);
+      if(!glicByDate.has(dayKey))glicByDate.set(dayKey,{date:d,manha:[],tarde:[],noite:[]});
+      glicByDate.get(dayKey)[dayPeriodOf(d)].push(g);
     });
-    function glicCell(values,ctx){
-      if(!values.length)return'<td>—</td>';
-      const alert=values.some(v=>v>=GLIC_CUTOFFS[ctx]);
-      return `<td${alert?' class="alert"':''}>${values.join(' / ')}</td>`;
+    /* A meta muda conforme o momento da medida (jejum ≤95, 1h ≤140, 2h ≤120),
+       então cada valor continua sendo comparado com a meta dele e leva junto
+       a sigla do momento — sem isso um número solto não dá pra interpretar. */
+    function glicCell(items){
+      if(!items.length)return'<td>—</td>';
+      const alert=items.some(g=>g.value>=GLIC_CUTOFFS[g.context]);
+      const txt=items.map(g=>`${g.value} ${GLIC_CTX_ABBR[g.context]||g.context}`).join(' / ');
+      return `<td${alert?' class="alert"':''}>${txt}</td>`;
     }
     const glicRows=[...glicByDate.values()].sort((a,b)=>b.date-a.date).map(d=>
-      `<tr><td>${fmt(d.date)}</td>${glicCell(d.jejum,'jejum')}${glicCell(d['1h'],'1h')}${glicCell(d['2h'],'2h')}</tr>`
+      `<tr><td>${fmt(d.date)}</td>${DAY_PERIODS.map(p=>glicCell(d[p.k])).join('')}</tr>`
     );
-    glicHtml=resumoTable(['Data','Jejum','Após 1h','Após 2h'],glicRows)+'<div class="resumo-note">Valores em mg/dL. Destacado: jejum ≥95, 1h ≥140 ou 2h ≥120.</div>';
+    glicHtml=resumoTable(['Data',...DAY_PERIODS.map(p=>p.lbl)],glicRows)+`<div class="resumo-note">${PERIOD_NOTE} Valores em mg/dL, com o momento da medida ao lado (J = jejum · 1h e 2h = pós-refeição). Destacado: jejum ≥95, 1h ≥140 ou 2h ≥120.</div>`;
   }
 
   const kickFiltered=filterByPeriod(kickSessions,resumoRangeDays,'date');
