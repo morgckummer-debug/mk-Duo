@@ -1459,7 +1459,9 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
 
       <div class="baby-card" id="babyCard">
         <div class="lbl" id="babyWeekLbl">Bebê</div>
-        <div class="card-title serif" id="babyFruit">—</div>
+        <div class="baby-avg" id="babyAvgSingle">
+          <div class="val serif" id="babyPhrase">—</div>
+        </div>
         <div class="baby-orb-wrap">
           <div class="baby-orb">
             <img class="baby-orb-img" id="babyFruitImgCenter" src="" alt="" onerror="this.src='frutas/semente.png'">
@@ -1549,9 +1551,6 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
           <div class="baby-discordance-txt" id="discordTxt">Preencha o peso estimado dos dois bebês pra ver a discordância de crescimento entre eles.</div>
         </div>
 
-        <div class="baby-avg" id="babyAvgSingle">
-          <div class="val serif" id="babyPhrase">—</div>
-        </div>
         <div class="baby-dev" id="babyDev"></div>
       </div>
 
@@ -2512,7 +2511,6 @@ function updateBabyLabels(ig){
   diptych.classList.toggle('twins',profile.twins);
 
   document.getElementById('babyWeekLbl').textContent=profile.twins?`Seus bebês · semana ${ig.weeks}`:`${profile.name||'Bebê'} · semana ${ig.weeks}`;
-  document.getElementById('babyFruit').textContent=fruit.name;
   document.getElementById('babyDev').textContent=milestone.d;
 
   // Um único card de fruta central — os dois bebês estão na mesma semana,
