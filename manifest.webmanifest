@@ -1,6 +1,6 @@
 {
-  "name": "MK-Duo — Acompanhamento Gestacional Gemelar",
-  "short_name": "MK-Duo",
+  "name": "DUO-MK — Acompanhamento Gestacional Gemelar",
+  "short_name": "DUO-MK",
   "description": "Acompanhamento de gestação gemelar: idade gestacional, exames, corionicidade e monitoramento dos dois bebês.",
   "start_url": "./index.html",
   "scope": "./",

@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>MK-Duo</title>
+<title>DUO-MK</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#c07a52">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="MK-Duo">
+<meta name="apple-mobile-web-app-title" content="DUO-MK">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,ital,wght@9..144,0,400;9..144,0,500;9..144,1,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -742,6 +742,36 @@ body::after{
   padding:8px 12px;box-shadow:var(--cs);
 }
 
+/* ── Consentimento (LGPD) ── */
+.consent-bar{
+  position:fixed;left:0;right:0;bottom:0;z-index:4000;
+  max-width:480px;margin:0 auto;
+  background:var(--surfs);color:var(--ink);
+  border-radius:var(--rl) var(--rl) 0 0;
+  padding:20px 20px calc(20px + env(safe-area-inset-bottom));
+  box-shadow:0 -12px 32px rgba(0,0,0,.25);
+  transform:translateY(12px);opacity:0;transition:transform .3s cubic-bezier(.22,.68,0,1.2),opacity .25s;
+}
+.consent-bar.show{transform:translateY(0);opacity:1}
+.consent-bar h2{font-family:'Fraunces',serif;font-size:19px;font-weight:500;margin-bottom:8px}
+.consent-bar p{font-size:13px;line-height:1.55;color:var(--ink2);margin-bottom:10px}
+.consent-bar label{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--ink2);cursor:pointer;margin:12px 0;line-height:1.4}
+.consent-bar input[type=checkbox]{margin-top:2px;cursor:pointer;flex-shrink:0}
+.auth-consent-label{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:var(--ink2);cursor:pointer;margin:2px 0 14px;line-height:1.4;text-align:left}
+.auth-consent-label input[type=checkbox]{margin-top:2px;cursor:pointer;flex-shrink:0}
+.auth-consent-label a{color:var(--pd2)}
+.link-btn{display:block;width:100%;border:none;background:transparent;color:var(--pd2);font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer;margin-top:10px;padding:6px;text-decoration:underline}
+.privacy-note{
+  font-size:12.5px;color:var(--ink2);line-height:1.55;background:var(--alert-bg);
+  border-radius:14px;padding:12px 14px;margin-bottom:16px;box-shadow:var(--ci);
+}
+.privacy-note strong{color:var(--alert)}
+.privacy-block{margin:16px 0;padding:15px;border-radius:16px;background:var(--surf);box-shadow:var(--cs)}
+.privacy-block h3{font-size:14px;color:var(--ink);margin-bottom:6px}
+.privacy-block p{font-size:12.5px;color:var(--ink2);line-height:1.5;margin-bottom:10px}
+.privacy-block.danger{background:var(--alert-bg)}
+.privacy-block.danger h3{color:var(--alert)}
+
 /* ── Resumo pra consulta ──
    Reaproveita o exm-sheet, só que maior (max-width maior, sem limite de
    altura na impressão) e com uma versão dedicada pra impressão: no print,
@@ -1331,7 +1361,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
 <div class="onb-overlay show" id="authOverlay">
   <div class="onb-sheet" style="max-width:340px">
     <div class="onb-ico">🤍</div>
-    <div class="onb-title" id="authTitle">Entrar no MK-Duo</div>
+    <div class="onb-title" id="authTitle">Entrar no DUO-MK</div>
     <div class="onb-desc" id="authDesc">Crie sua conta pra guardar os dados da sua gestação com segurança — mesmo se trocar de celular.</div>
     <div class="field" style="text-align:left">
       <label>E-mail</label>
@@ -1341,6 +1371,10 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
       <label>Senha</label>
       <input class="inp" type="password" id="authPassword" placeholder="Mínimo 6 caracteres" autocomplete="current-password">
     </div>
+    <label class="auth-consent-label hidden" id="authConsentField">
+      <input type="checkbox" id="authConsentCheck">
+      Li e entendi que o DUO-MK é educacional e não substitui acompanhamento médico, e concordo com a <a href="politica.html" target="_blank" rel="noopener" onclick="event.stopPropagation()">Política de Privacidade</a>.
+    </label>
     <div id="authError" style="color:var(--alert);font-size:12.5px;margin-bottom:10px;display:none"></div>
     <button class="btn-calc" id="authSubmitBtn" style="margin-bottom:10px">Entrar</button>
     <button class="onb-skip" id="authToggleMode" style="width:100%">Ainda não tenho conta — criar agora</button>
@@ -1348,7 +1382,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
 </div>
 <div id="app" style="display:none">
   <div class="hdr">
-    <div class="brand serif">MK<span>Duo</span></div>
+    <div class="brand serif">DUO-<span>MK</span></div>
     <div class="hdr-actions">
       <button class="dark-btn" id="onbHelpBtn" title="Ver tutorial">?</button>
       <button class="dark-btn" id="darkBtn" title="Alternar tema"><svg viewBox="0 0 24 24" width="20" height="20" fill="var(--peach)" stroke="var(--pd2)" stroke-width="1.3" stroke-linejoin="round" stroke-linecap="round" style="display:block"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
@@ -1356,7 +1390,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
   </div>
 
   <div class="install-banner" id="installBanner">
-    <div class="install-banner-txt" id="installBannerTxt">📲 Instale o MK-Duo no seu celular</div>
+    <div class="install-banner-txt" id="installBannerTxt">📲 Instale o DUO-MK no seu celular</div>
     <div class="install-banner-actions">
       <span class="install-banner-btn" id="installBannerBtn">Instalar</span>
       <span class="install-banner-close" id="installBannerClose">✕</span>
@@ -1972,13 +2006,19 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
     </div>
     <div class="card">
       <div class="lbl">Sobre o app</div>
-      <div class="card-title" style="font-size:21px;margin-bottom:14px">MK<span style="color:var(--pd)">Duo</span> <span style="font-size:11px;color:var(--ink3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-family:inherit">· Calculadora Gestacional</span></div>
+      <div class="card-title" style="font-size:21px;margin-bottom:14px">DUO-<span style="color:var(--pd)">MK</span> <span style="font-size:11px;color:var(--ink3);font-weight:700;letter-spacing:.1em;text-transform:uppercase;font-family:inherit">· Calculadora Gestacional</span></div>
       <div class="about-bio">
         <p>App desenvolvido especialmente para <strong>gestação gemelar</strong>: idade gestacional compartilhada, corionicidade, acompanhamento individual dos dois bebês (com discordância de crescimento) e cronograma de exames adaptado, além de período fértil e acompanhamento pré-natal.</p>
         <p style="color:var(--ink3);font-size:12px">⚠️ Os resultados são informativos. Confirme sempre com seu obstetra.</p>
       </div>
     </div>
-    <footer style="padding-bottom:8px">mk-duo v1 · desenvolvido com carinho por Dra. Morgana Kummer</footer>
+    <div class="card">
+      <div class="lbl">🔒 Privacidade</div>
+      <div class="card-title" style="font-size:18px;margin-bottom:10px">Seus dados <span style="color:var(--pd)" class="serif">são seus</span></div>
+      <div class="helper">Baixe, edite ou apague os dados que o DUO-MK guardou sobre você, e leia a política de privacidade completa.</div>
+      <button class="kick-tap-btn" id="openPrivacyBtn" style="margin-top:14px">Meus dados & privacidade</button>
+    </div>
+    <footer style="padding-bottom:8px">DUO-MK v1 · desenvolvido com carinho por Dra. Morgana Kummer</footer>
   </div>
 </div>
 
@@ -2002,7 +2042,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
   <div class="exm-sheet" id="premiumSheet">
     <div class="exm-sheet-handle"></div>
     <button class="exm-sheet-close" id="premiumClose">✕</button>
-    <div class="exm-sheet-name">✨ MK-Duo Premium</div>
+    <div class="exm-sheet-name">✨ DUO-MK Premium</div>
     <div class="exm-sheet-note hidden" id="premiumTrialNote"></div>
     <div class="exm-sheet-desc">Desbloqueie o acompanhamento completo da sua gestação gemelar: discordância de crescimento entre os bebês, cronograma de exames adaptado à corionicidade e monitoramento de peso, pressão e curva glicêmica.</div>
     <ul class="exm-sheet-items">
@@ -2026,7 +2066,7 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
   <div class="exm-sheet" id="installSheet">
     <div class="exm-sheet-handle"></div>
     <button class="exm-sheet-close" id="installClose">✕</button>
-    <div class="exm-sheet-name">📲 Instalar o MK-Duo</div>
+    <div class="exm-sheet-name">📲 Instalar o DUO-MK</div>
     <div class="exm-sheet-desc">Adicione o app à tela de início pra abrir com um toque, em tela cheia, como um aplicativo de verdade.</div>
     <ul class="exm-sheet-items">
       <li>1. Toque no ícone Compartilhar (□ com seta ↑) na barra do Safari</li>
@@ -2105,6 +2145,15 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
     <button class="exm-sheet-close no-print" id="resumoClose">✕</button>
     <div id="resumoBody"></div>
     <button class="kick-tap-btn no-print" id="resumoPrintBtn" type="button" style="margin-top:18px">🖨️ Baixar / imprimir PDF</button>
+  </div>
+</div>
+
+<!-- Privacidade & meus dados (LGPD) -->
+<div class="exm-overlay" id="privacyOverlay">
+  <div class="exm-sheet" id="privacySheet">
+    <div class="exm-sheet-handle"></div>
+    <button class="exm-sheet-close" id="privacyClose">✕</button>
+    <div id="privacySheetBody"></div>
   </div>
 </div>
 
@@ -2281,7 +2330,7 @@ function fetalHeightFromFemur(femurCm){
    perto do termo): abaixo de 30s usa só Hadlock, de 35s em diante usa só
    INTERGROWTH, e entre 30 e 35s mistura as duas linearmente. Tabelas e
    regra de mistura já validadas em outro projeto — mantidas exatamente
-   aqui, só adaptadas ao layout/nomenclatura do MK-Duo. */
+   aqui, só adaptadas ao layout/nomenclatura do DUO-MK. */
 const PFE_HADLOCK={
   20:[247,275,331,387],21:[298,331,399,467],22:[357,397,478,559],23:[424,472,568,664],
   24:[503,556,670,784],25:[590,653,785,918],26:[685,758,913,1068],27:[791,875,1055,1234],
@@ -2469,7 +2518,7 @@ document.getElementById('darkBtn').addEventListener('click',()=>{
 });
 
 /* ── Perfil (nome + sexo dos bebês, persistido no localStorage) ──
-   MK-Duo é dedicado à gestação gemelar — twins é sempre true, sem opção de
+   DUO-MK é dedicado à gestação gemelar — twins é sempre true, sem opção de
    voltar pra gestação única (isso já existe no MKCalc original). */
 const PROFILE_KEY='mkcalc_profile';
 function loadProfile(){
@@ -4363,7 +4412,7 @@ function renderResumoBody(){
 
   body.innerHTML=`
     <div class="resumo-mast">
-      <div class="resumo-brand">MK<span>Duo</span></div>
+      <div class="resumo-brand">DUO-<span>MK</span></div>
       <div class="resumo-mast-meta">${patientLine?`<div class="resumo-patient">${patientLine}</div>`:''}Gerado em ${fmt(new Date())}<br>${currentUser&&currentUser.email?currentUser.email:''}</div>
     </div>
     <div class="resumo-hero">${heroHtml}</div>
@@ -4407,7 +4456,7 @@ document.getElementById('resumoPrintBtn').addEventListener('click',()=>window.pr
 const ONB_KEY='mkcalc_onboarded';
 const TWIN_HEARTS_SVG='<svg width="54" height="32" viewBox="0 0 54 32" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:0 auto"><defs><linearGradient id="lilacHeartGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4a2e7a"/><stop offset="100%" stop-color="#9b7fd4"/></linearGradient></defs><path fill="url(#lilacHeartGrad)" transform="translate(0,2) scale(1.05)" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/><path fill="url(#lilacHeartGrad)" transform="translate(22,2) scale(1.05)" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
 const ONBOARDING_STEPS=[
-  {ico:TWIN_HEARTS_SVG,title:'Bem-vinda ao MK-Duo!',desc:'O app pra acompanhar sua <strong>gestação gemelar</strong>: idade gestacional, os dois bebês, exames adaptados à corionicidade e muito mais.'},
+  {ico:TWIN_HEARTS_SVG,title:'Bem-vinda ao DUO-MK!',desc:'O app pra acompanhar sua <strong>gestação gemelar</strong>: idade gestacional, os dois bebês, exames adaptados à corionicidade e muito mais.'},
   {ico:'📅',title:'Qual sua idade gestacional?',desc:'Você pode informar pela <strong>DUM</strong>, pelo <strong>1º ultrassom</strong> ou pela <strong>DPP</strong>. A partir daí, o app calcula sua idade gestacional sozinho — sempre atualizada, toda vez que você abrir.',cta:'Informar agora',ctaPage:'calc'},
   {ico:'🧭',title:'Use as abas aqui embaixo',desc:'Calcular, Resultado, Exames e Checklist ficam sempre a um toque de distância, na barra de navegação.'},
   {ico:'🧸',title:'Personalize na aba Perfil',desc:'Coloque aqui o seu nome completo e data de nascimento (o resumo pra consulta já mostra sua idade automaticamente), o nome e sexo de cada bebê, e a <strong>corionicidade</strong> da gestação — se ainda não souber a corionicidade, dá pra deixar em branco por enquanto.',cta:'Preencher agora',ctaPage:'profile'},
@@ -4497,11 +4546,13 @@ function setAuthMode(mode){
     document.getElementById('authDesc').textContent='Leva menos de um minuto. Seus dados ficam salvos com segurança e você não perde nada trocando de aparelho.';
     document.getElementById('authSubmitBtn').textContent='Criar conta';
     document.getElementById('authToggleMode').textContent='Já tenho conta — entrar';
+    document.getElementById('authConsentField').classList.remove('hidden');
   }else{
-    document.getElementById('authTitle').textContent='Entrar no MK-Duo';
+    document.getElementById('authTitle').textContent='Entrar no DUO-MK';
     document.getElementById('authDesc').textContent='Crie sua conta pra guardar os dados da sua gestação com segurança — mesmo se trocar de celular.';
     document.getElementById('authSubmitBtn').textContent='Entrar';
     document.getElementById('authToggleMode').textContent='Ainda não tenho conta — criar agora';
+    document.getElementById('authConsentField').classList.add('hidden');
   }
 }
 document.getElementById('authToggleMode').addEventListener('click',()=>{
@@ -4514,6 +4565,10 @@ async function handleAuthSubmit(){
   const password=document.getElementById('authPassword').value;
   if(!email||!password){showAuthError('Preencha e-mail e senha.');return;}
   if(password.length<6){showAuthError('A senha precisa ter pelo menos 6 caracteres.');return;}
+  if(authMode==='signup'&&!document.getElementById('authConsentCheck').checked){
+    showAuthError('Confirme que você leu e concorda com a Política de Privacidade.');
+    return;
+  }
   const btn=document.getElementById('authSubmitBtn');
   btn.disabled=true;btn.style.opacity='.6';
   try{
@@ -4521,6 +4576,7 @@ async function handleAuthSubmit(){
       const{data,error}=await sb.auth.signUp({email,password});
       if(error)throw error;
       currentUser=data.user;
+      try{localStorage.setItem(CONSENT_KEY,JSON.stringify({date:new Date().toISOString(),version:CONSENT_VERSION,accepted:true}));}catch{}
     }else{
       const{data,error}=await sb.auth.signInWithPassword({email,password});
       if(error)throw error;
@@ -4727,9 +4783,11 @@ async function onLoginSuccess(){
   loadStoredPregnancy();
   applyPremiumGate();
   maybeShowInstallBanner();
-  // Tutorial de boas-vindas só na 1ª vez, e só depois que ela já está
-  // logada — evita competir com a tela de entrar/criar conta.
-  if(!localStorage.getItem(ONB_KEY))setTimeout(openOnboarding,400);
+  // Tutorial de boas-vindas (e, antes dele, o consentimento LGPD se ainda
+  // não tiver sido dado — cobre contas criadas antes dessa tela existir)
+  // só depois que ela já está logada, pra não competir com a tela de
+  // entrar/criar conta.
+  setTimeout(maybeShowConsentThenOnboarding,400);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -4797,6 +4855,151 @@ if('serviceWorker' in navigator){
     await onLoginSuccess();
   }
 })();
+
+/* ══════════════════════════════════════════
+   Privacidade & LGPD
+   ══════════════════════════════════════════ */
+const CONSENT_KEY='mkcalc_consent_v1';
+const CONSENT_VERSION='1.0';
+const ALL_LOCAL_DATA_KEYS=[PREG_KEY,PROFILE_KEY,STORAGE_KEY,EXAM_DONE_KEY,KICK_KEY,CONTR_KEY,CONTR_SESSION_KEY,ONB_KEY,WEIGHT_KEY,BP_KEY,TOTG_KEY,GLIC_KEY,INSTALL_DISMISS_KEY];
+
+function loadConsent(){
+  try{const raw=localStorage.getItem(CONSENT_KEY);return raw?JSON.parse(raw):null;}
+  catch{return null;}
+}
+function showConsentBar(onAccepted){
+  if(document.getElementById('consentBar'))return;
+  const bar=document.createElement('div');
+  bar.className='consent-bar';
+  bar.id='consentBar';
+  bar.innerHTML=`
+    <h2>👶 Bem-vinda ao DUO-MK</h2>
+    <p><strong>O DUO-MK é educacional.</strong> Ajuda a acompanhar sua gestação gemelar, mas <strong>nunca substitui seu médico</strong>. Em caso de sangramento, dor ou qualquer urgência, procure atendimento imediatamente.</p>
+    <p>O nome, sexo dos bebês, corionicidade e data base da gestação ficam salvos com segurança na nuvem, associados à sua conta. Os registros do dia a dia (peso, pressão, glicemia, checklist etc.) ficam só neste aparelho.</p>
+    <label><input type="checkbox" id="consentCheck">Li e entendi que o DUO-MK é educacional e não substitui acompanhamento médico.</label>
+    <button class="btn-calc" id="consentAcceptBtn" type="button">Aceitar e continuar</button>
+    <button class="link-btn" id="consentPolicyBtn" type="button">Ver política completa</button>`;
+  document.body.appendChild(bar);
+  requestAnimationFrame(()=>bar.classList.add('show'));
+  document.getElementById('consentPolicyBtn').addEventListener('click',()=>window.open('politica.html','_blank'));
+  document.getElementById('consentAcceptBtn').addEventListener('click',()=>{
+    if(!document.getElementById('consentCheck').checked){
+      showToast('Confirme que entendeu que o DUO-MK não substitui seu médico',2200);
+      return;
+    }
+    try{localStorage.setItem(CONSENT_KEY,JSON.stringify({date:new Date().toISOString(),version:CONSENT_VERSION,accepted:true}));}catch{}
+    bar.classList.remove('show');
+    setTimeout(()=>bar.remove(),300);
+    if(onAccepted)onAccepted();
+  });
+}
+function maybeShowConsentThenOnboarding(){
+  const consent=loadConsent();
+  if(!consent||consent.version!==CONSENT_VERSION||!consent.accepted){
+    showConsentBar(()=>{if(!localStorage.getItem(ONB_KEY))openOnboarding();});
+  }else if(!localStorage.getItem(ONB_KEY)){
+    openOnboarding();
+  }
+}
+
+async function exportUserData(){
+  const local={};
+  ALL_LOCAL_DATA_KEYS.forEach(k=>{
+    try{const raw=localStorage.getItem(k);if(raw!=null)local[k]=JSON.parse(raw);}catch{}
+  });
+  const payload={
+    exportDate:new Date().toISOString(),
+    app:'DUO-MK',
+    dadosNesteAparelho:local,
+    consentimento:loadConsent(),
+    conta:currentUser?{email:currentUser.email,userId:currentUser.id}:null,
+    dadosNaNuvem:null
+  };
+  if(currentUser){
+    const{data}=await sb.from('pregnancies').select('*').eq('user_id',currentUser.id).maybeSingle();
+    payload.dadosNaNuvem=data||null;
+  }
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const link=document.createElement('a');
+  link.href=url;
+  link.download='duo-mk-meus-dados.json';
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast('Seus dados foram baixados',2000);
+}
+
+function goEditMyData(){
+  closePrivacySheet();
+  goToPage('profile');
+  showToast('Edite seus dados aqui embaixo',2200);
+}
+
+async function eraseAllUserData(){
+  const typed=prompt('Isso apaga PERMANENTEMENTE, neste aparelho, todos os seus dados no DUO-MK: corionicidade, nome e sexo dos dois bebês, data base da gestação, checklist, exames marcados, movimentos, contrações, peso, pressão, curva glicêmica e glicemia diária.\n\nTambém desconecta você e apaga os dados sincronizados na nuvem (corionicidade, nomes, sexos e data base).\n\nDigite APAGAR para confirmar:');
+  if(typed==null)return;
+  if(typed.trim().toUpperCase()!=='APAGAR'){showToast('Confirmação incorreta, nada foi apagado',2000);return;}
+
+  if(currentUser){
+    await sb.from('pregnancies').update({
+      chorionicity:null,lmp_date:null,method:null,baby_a_name:null,baby_a_sex:null,baby_b_name:null,baby_b_sex:null,updated_at:new Date().toISOString()
+    }).eq('user_id',currentUser.id);
+    await sb.auth.signOut();
+  }
+  ALL_LOCAL_DATA_KEYS.concat([CONSENT_KEY]).forEach(k=>{try{localStorage.removeItem(k);}catch{}});
+  alert('Pronto. Seus dados neste aparelho foram apagados, você foi desconectada e os dados sincronizados na nuvem também foram removidos.\n\nPara encerrar de vez o cadastro de login (e-mail e senha), escreva pra gente pelo contato da política de privacidade.');
+  location.reload();
+}
+
+function renderPrivacySheetBody(){
+  document.getElementById('privacySheetBody').innerHTML=`
+    <div class="exm-sheet-name">🔒 Meus dados &amp; privacidade</div>
+    <div class="privacy-note"><strong>⚠️ Emergência?</strong> Em caso de sangramento, dor ou qualquer urgência, vá ao hospital — não espere resposta por aqui.</div>
+    <div class="exm-sheet-desc">O DUO-MK guarda os dados que você digita neste aparelho. Corionicidade, nome e sexo dos dois bebês e data base da gestação também ficam salvos na nuvem, associados à sua conta.</div>
+
+    <div class="privacy-block">
+      <h3>📥 Baixar meus dados</h3>
+      <p>Recebe um arquivo com tudo que o DUO-MK guardou sobre você, neste aparelho e na nuvem.</p>
+      <button class="btn-calc" id="privacyExportBtn" type="button">Baixar meus dados (JSON)</button>
+    </div>
+
+    <div class="privacy-block">
+      <h3>✏️ Editar minhas informações</h3>
+      <p>Corionicidade, nomes, sexos, data base e os registros do dia a dia ficam na página Perfil.</p>
+      <button class="kick-tap-btn" id="privacyEditBtn" type="button">Ir para editar</button>
+    </div>
+
+    <div class="privacy-block">
+      <h3>📖 Política de privacidade</h3>
+      <p>Leia sobre como usamos seus dados e seus direitos garantidos pela LGPD.</p>
+      <button class="kick-tap-btn" id="privacyPolicyOpenBtn" type="button">Ver política completa</button>
+    </div>
+
+    <div class="privacy-block danger">
+      <h3>🗑️ Apagar meus dados</h3>
+      <p><strong>Permanente.</strong> Apaga tudo neste aparelho, desconecta você e limpa os dados sincronizados na nuvem.</p>
+      <button class="btn-danger" id="privacyDeleteBtn" type="button">Apagar meus dados</button>
+    </div>
+
+    <div class="privacy-block">
+      <h3>💬 Dúvidas sobre privacidade?</h3>
+      <p>📧 dramorganapremium@gmail.com<br>📞 31 99391-0212</p>
+    </div>`;
+  document.getElementById('privacyExportBtn').addEventListener('click',exportUserData);
+  document.getElementById('privacyEditBtn').addEventListener('click',goEditMyData);
+  document.getElementById('privacyPolicyOpenBtn').addEventListener('click',()=>window.open('politica.html','_blank'));
+  document.getElementById('privacyDeleteBtn').addEventListener('click',eraseAllUserData);
+}
+function openPrivacySheet(){
+  renderPrivacySheetBody();
+  document.getElementById('privacyOverlay').classList.add('show');
+}
+function closePrivacySheet(){
+  document.getElementById('privacyOverlay').classList.remove('show');
+}
+document.getElementById('openPrivacyBtn').addEventListener('click',openPrivacySheet);
+document.getElementById('privacyClose').addEventListener('click',closePrivacySheet);
+document.getElementById('privacyOverlay').addEventListener('click',e=>{if(e.target.id==='privacyOverlay')closePrivacySheet();});
 </script>
 </body>
 </html>

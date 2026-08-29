@@ -1,4 +1,4 @@
-# MK-Duo
+# DUO-MK
 
 App web para acompanhamento de **gestação gemelar**, com idade gestacional compartilhada e acompanhamento individual de cada bebê.
 
