@@ -1,0 +1,32 @@
+name: Supabase Keep-Alive
+
+# O plano gratuito do Supabase pausa (e pode excluir, após mais tempo)
+# projetos que ficam sem nenhuma atividade de API por ~7 dias.
+# Este workflow faz uma chamada leve à API do Supabase a cada 3 dias
+# para manter o projeto do DUO-MK sempre ativo.
+on:
+  schedule:
+    - cron: "0 8 */3 * *" # a cada 3 dias, 08:00 UTC
+  workflow_dispatch: {} # permite rodar manualmente pela aba Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          # Mesma URL e chave anônima (pública) já usadas no index.html do app.
+          # A chave "anon" do Supabase é feita para ser exposta no cliente e
+          # fica protegida pelas regras de RLS do banco.
+          SUPABASE_URL: "https://mxuywcfgetpoxcujzxip.supabase.co"
+          SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14dXl3Y2ZnZXRwb3hjdWp6eGlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4ODkzNDYsImV4cCI6MjEwMjQ2NTM0Nn0.msNw6eQiduWZkjwo4DyV5tTkP_X7gSdUY0PUb5AkyL0"
+        run: |
+          set -e
+          echo "Pingando $SUPABASE_URL para manter o projeto Supabase ativo..."
+          curl -sS -o /dev/null -w "REST root: HTTP %{http_code}\n" \
+            "$SUPABASE_URL/rest/v1/" \
+            -H "apikey: $SUPABASE_ANON_KEY"
+          curl -sS -o /dev/null -w "Tabela pregnancies: HTTP %{http_code}\n" \
+            "$SUPABASE_URL/rest/v1/pregnancies?select=id&limit=1" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY"
