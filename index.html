@@ -4343,7 +4343,16 @@ function renderResumoBody(){
 
   const wEntries=filterByPeriod(weightEntries,resumoRangeDays,'date');
   const weightRows=[...wEntries].reverse().map(w=>`<tr><td>${fmt(new Date(w.date))}</td><td>${fmtKg(w.kg)}</td></tr>`);
-  let weightHtml=resumoTable(['Data','Peso'],weightRows);
+  let weightHtml='';
+  const wFirst=weightEntries[0];
+  const wLast=weightEntries[weightEntries.length-1];
+  if(wFirst&&wLast){
+    const wBaseKg=profile.prePregWeightKg!=null?profile.prePregWeightKg:wFirst.kg;
+    const wBaseLbl=profile.prePregWeightKg!=null?'Peso pré-gestacional':'Peso inicial';
+    const totalGain=wLast.kg-wBaseKg;
+    weightHtml+=`<div class="resumo-note">${wBaseLbl}: ${fmtKg(wBaseKg)} · Peso atual: ${fmtKg(wLast.kg)} · Ganho total: ${totalGain>=0?'+':''}${fmtKg(totalGain)}</div>`;
+  }
+  weightHtml+=resumoTable(['Data','Peso'],weightRows);
   if(wEntries.length>=2){
     const gain=wEntries[wEntries.length-1].kg-wEntries[0].kg;
     weightHtml+=`<div class="resumo-note">Ganho no período: ${gain>=0?'+':''}${fmtKg(gain)}</div>`;
