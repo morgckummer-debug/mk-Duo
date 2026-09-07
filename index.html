@@ -3134,6 +3134,20 @@ function saveExamDone(){
   try{localStorage.setItem(EXAM_DONE_KEY,JSON.stringify(examDone));}catch{}
 }
 const examDone=loadExamDone();
+/* Leitura do resultado do TOTG (registrado na aba Resultados, ver seção
+   "Curva glicêmica" mais abaixo) — precisa estar disponível já aqui, antes
+   do primeiro renderExamGuide(), pra mostrar no card "Curva glicêmica (TOTG)"
+   se o resultado deu alterado (critério de diabetes gestacional). */
+const TOTG_KEY='mkcalc_totg_v1';
+const TOTG_EXAM_KEY='lab-1';
+const TOTG_CUTOFFS={jejum:92,h1:180,h2:153};
+const TOTG_FIELDS=[{k:'jejum',lbl:'Jejum'},{k:'h1',lbl:'Após 1h'},{k:'h2',lbl:'Após 2h'}];
+function loadTOTG(){
+  try{const raw=localStorage.getItem(TOTG_KEY);return raw?JSON.parse(raw):null;}
+  catch{return null;}
+}
+function totgAltered(field,val){return val>=TOTG_CUTOFFS[field];}
+function totgHasAlteredValue(r){return TOTG_FIELDS.some(f=>totgAltered(f.k,r[f.k]));}
 function toggleExamDone(ex,key){
   const wasDone=!!examDone[key];
   examDone[key]=!wasDone;
@@ -3145,6 +3159,13 @@ function examCard(ex,idx,catId){
   const badge=ex.indicacao?`<div class="exm-badge">🔎 Conforme indicação médica</div>`:'';
   const key=`${catId}-${idx}`;
   const checked=!!examDone[key];
+  /* Card do TOTG ('lab-1'): se ela já registrou o resultado (na aba
+     Resultados), mostra aqui se deu alterado — critério de diabetes
+     gestacional (IADPSG) — sem precisar abrir o card de novo. */
+  const totg=key===TOTG_EXAM_KEY?loadTOTG():null;
+  const totgBadge=totg
+    ?`<div class="bmi-pill tone-${totgHasAlteredValue(totg)?'ob':'normal'}" style="margin-top:8px">${totgHasAlteredValue(totg)?'⚠️ Diabetes gestacional (IADPSG)':'✅ TOTG normal'}</div>`
+    :'';
   return `<button class="exm-card${checked?' done':''}" type="button" data-cat="${catId}" data-idx="${idx}">
     <div class="exm-card-top">
       <div class="exm-name">${ex.name}</div>
@@ -3156,6 +3177,7 @@ function examCard(ex,idx,catId){
     <div class="lbl">Período recomendado</div>
     <div class="exm-periodo">🗓️ ${ex.periodo}</div>
     <div class="exm-desc">${ex.desc}</div>
+    ${totgBadge}
     ${badge}
   </button>`;
 }
@@ -4027,17 +4049,11 @@ renderBPCard();
    um único resultado (com os 3 valores), editável/removível, em vez de um
    histórico. Salvar um resultado marca automaticamente o exame como
    realizado (mesma chave 'lab-1' usada no Guia de Exames e na Checklist —
-   ver CHECKLIST_EXAM_LINK), pra não duplicar a marcação em dois lugares. */
-const TOTG_KEY='mkcalc_totg_v1';
-const TOTG_EXAM_KEY='lab-1';
-/* Critérios da IADPSG: 1 valor igual ou acima do ponto de corte já fecha
-   diagnóstico de diabetes gestacional. */
-const TOTG_CUTOFFS={jejum:92,h1:180,h2:153};
-const TOTG_FIELDS=[{k:'jejum',lbl:'Jejum'},{k:'h1',lbl:'Após 1h'},{k:'h2',lbl:'Após 2h'}];
-function loadTOTG(){
-  try{const raw=localStorage.getItem(TOTG_KEY);return raw?JSON.parse(raw):null;}
-  catch{return null;}
-}
+   ver CHECKLIST_EXAM_LINK), pra não duplicar a marcação em dois lugares.
+   TOTG_KEY, TOTG_EXAM_KEY, TOTG_CUTOFFS, TOTG_FIELDS, loadTOTG, totgAltered
+   e totgHasAlteredValue ficam declarados mais acima, junto do Guia de
+   Exames — precisam existir antes do primeiro renderExamGuide(), que já usa
+   totgHasAlteredValue() pra decorar o card do TOTG. */
 function saveTOTG(){
   try{
     if(totgResult)localStorage.setItem(TOTG_KEY,JSON.stringify(totgResult));
@@ -4045,8 +4061,6 @@ function saveTOTG(){
   }catch{}
 }
 let totgResult=loadTOTG();
-function totgAltered(field,val){return val>=TOTG_CUTOFFS[field];}
-function totgHasAlteredValue(r){return TOTG_FIELDS.some(f=>totgAltered(f.k,r[f.k]));}
 function renderTOTGResult(){
   const wrap=document.getElementById('totgResultWrap');
   if(!totgResult){wrap.innerHTML='';return;}
