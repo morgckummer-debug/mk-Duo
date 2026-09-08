@@ -1367,7 +1367,25 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
   box-shadow:var(--cs);
 }
 .home-hero-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.home-hero-dev{font-size:12.5px;color:var(--ink2);margin-top:10px;line-height:1.5}
+/* Substitui o orb de fruta (que só faz sentido pra um bebê) por um par de
+   coraçõezinhos pulsando fora de sincronia — o afeto de "olha como já
+   cresceu" vira "seus dois bebês estão bem", sem depender de comparar
+   tamanho, que não se aplica bem a gêmeos. */
+.home-hero-body{display:flex;align-items:center;gap:16px;margin:14px 0 18px}
+.home-duo-hearts{display:flex;flex-shrink:0;font-size:34px;line-height:1}
+.home-heart{display:inline-block;animation:heartBeat 1.8s ease-in-out infinite}
+.home-heart.a{margin-right:-10px;animation-delay:0s}
+.home-heart.b{animation-delay:.35s}
+@keyframes heartBeat{
+  0%,100%{transform:scale(1)}
+  15%{transform:scale(1.18)}
+  30%{transform:scale(1)}
+  45%{transform:scale(1.12)}
+  60%{transform:scale(1)}
+}
+.home-hero-info{min-width:0}
+.home-hero-phrase{font-size:16px;font-weight:500;color:var(--ink)}
+.home-hero-dev{font-size:12.5px;color:var(--ink2);margin-top:6px;line-height:1.5}
 
 .home-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .home-mini{padding:16px;margin-bottom:0;cursor:pointer;transition:var(--trans);border:none;text-align:left;font-family:inherit}
@@ -1453,7 +1471,16 @@ footer{text-align:center;padding:8px 16px 0;font-size:10px;color:var(--ink3);let
         <div class="home-hero-top">
           <div class="lbl" id="homeWeekLbl">Semana —</div>
         </div>
-        <div class="home-hero-dev" id="homeDev"></div>
+        <div class="home-hero-body">
+          <div class="home-duo-hearts" aria-hidden="true">
+            <span class="home-heart a">🩵</span>
+            <span class="home-heart b">🩷</span>
+          </div>
+          <div class="home-hero-info">
+            <div class="home-hero-phrase serif">Seus bebês, hoje</div>
+            <div class="home-hero-dev" id="homeDev"></div>
+          </div>
+        </div>
         <div class="months-highlight" id="homeMonthsHighlight">
           <div class="lbl">Meses de gestação</div>
           <div class="months-big serif" id="homeMonthsBig">—</div>
