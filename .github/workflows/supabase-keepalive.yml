@@ -1,12 +1,13 @@
 name: Supabase Keep-Alive
 
 # O plano gratuito do Supabase pausa (e pode excluir, após mais tempo)
-# projetos que ficam sem nenhuma atividade de API por ~7 dias.
-# Este workflow faz uma chamada leve à API do Supabase a cada 3 dias
-# para manter o projeto do DUO-MK sempre ativo.
+# projetos que ficam sem atividade "suficiente" de API por ~7 dias.
+# Este workflow faz uma consulta leve e real à API do Supabase todo dia
+# para manter o projeto do DUO-MK sempre ativo, com boa margem de segurança
+# em relação ao limite de 7 dias do Supabase.
 on:
   schedule:
-    - cron: "0 8 */3 * *" # a cada 3 dias, 08:00 UTC
+    - cron: "0 8 * * *" # todo dia, 08:00 UTC
   workflow_dispatch: {} # permite rodar manualmente pela aba Actions
 
 jobs:
@@ -23,9 +24,12 @@ jobs:
         run: |
           set -e
           echo "Pingando $SUPABASE_URL para manter o projeto Supabase ativo..."
+          # A raiz do REST precisa do header Authorization além do apikey,
+          # senão o PostgREST responde 401 e o ping não conta como atividade real.
           curl -sS -o /dev/null -w "REST root: HTTP %{http_code}\n" \
             "$SUPABASE_URL/rest/v1/" \
-            -H "apikey: $SUPABASE_ANON_KEY"
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY"
           curl -sS -o /dev/null -w "Tabela pregnancies: HTTP %{http_code}\n" \
             "$SUPABASE_URL/rest/v1/pregnancies?select=id&limit=1" \
             -H "apikey: $SUPABASE_ANON_KEY" \
