@@ -38,7 +38,10 @@ jobs:
             echo "Faltou configurar o secret SUPABASE_DB_URL no repositório." >&2
             exit 1
           fi
-          pg_dump "$SUPABASE_DB_URL" --no-owner --no-privileges -f backup.sql
+          # Caminho explícito: o "pg_dump" do PATH continua sendo a versão
+          # pré-instalada no runner (mais antiga que o Postgres do Supabase),
+          # mesmo depois de instalar o postgresql-client-17.
+          /usr/lib/postgresql/17/bin/pg_dump "$SUPABASE_DB_URL" --no-owner --no-privileges -f backup.sql
           if [ ! -s backup.sql ]; then
             echo "O dump saiu vazio, algo deu errado." >&2
             exit 1
