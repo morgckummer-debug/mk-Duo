@@ -1,0 +1,44 @@
+name: Supabase Backup
+
+# O plano gratuito do Supabase não inclui backups automáticos.
+# Este workflow roda todo dia, exporta o banco inteiro (pg_dump) e guarda
+# o arquivo como artifact do GitHub Actions, mantendo histórico dos
+# últimos dias, para não depender só do estado atual do banco.
+on:
+  schedule:
+    - cron: "0 9 * * *" # todo dia, 09:00 UTC (1h depois do keep-alive)
+  workflow_dispatch: {} # permite rodar manualmente pela aba Actions
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Dump do banco Supabase
+        env:
+          # String de conexão do "Session pooler" (Project Settings > Database
+          # > Connection string > Session mode), guardada como secret do
+          # repositório em Settings > Secrets and variables > Actions.
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -e
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "Faltou configurar o secret SUPABASE_DB_URL no repositório." >&2
+            exit 1
+          fi
+          pg_dump "$SUPABASE_DB_URL" --no-owner --no-privileges -f backup.sql
+          if [ ! -s backup.sql ]; then
+            echo "O dump saiu vazio, algo deu errado." >&2
+            exit 1
+          fi
+          gzip backup.sql
+          echo "backup_date=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
+
+      - name: Guarda o backup como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-backup-${{ env.backup_date }}
+          path: backup.sql.gz
+          retention-days: 30
