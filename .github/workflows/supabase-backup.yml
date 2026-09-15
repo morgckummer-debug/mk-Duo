@@ -6,7 +6,7 @@ name: Supabase Backup
 # últimos dias, para não depender só do estado atual do banco.
 on:
   schedule:
-    - cron: "0 9 * * *" # todo dia, 09:00 UTC (1h depois do keep-alive)
+    - cron: "47 9 * * *" # todo dia, 09:47 UTC (depois do keep-alive)
   workflow_dispatch: {} # permite rodar manualmente pela aba Actions
 
 jobs:

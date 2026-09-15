@@ -5,9 +5,11 @@ name: Supabase Keep-Alive
 # Este workflow faz uma consulta leve e real à API do Supabase todo dia
 # para manter o projeto do DUO-MK sempre ativo, com boa margem de segurança
 # em relação ao limite de 7 dias do Supabase.
+# O horário evita a virada da hora de propósito: o GitHub avisa que
+# agendamentos em hh:00 são os mais sujeitos a atraso/perda por pico de carga.
 on:
   schedule:
-    - cron: "0 8 * * *" # todo dia, 08:00 UTC
+    - cron: "13 8 * * *" # todo dia, 08:13 UTC
   workflow_dispatch: {} # permite rodar manualmente pela aba Actions
 
 jobs:
