@@ -1,4 +1,4 @@
-const CACHE_NAME='duomk-v4';
+const CACHE_NAME='duomk-v5';
 const CORE_ASSETS=[
   './manifest.webmanifest',
   './icon.png'
@@ -24,7 +24,7 @@ self.addEventListener('fetch',e=>{
   const isNav=e.request.mode==='navigate'||e.request.url.endsWith('/index.html');
   if(isNav){
     e.respondWith(
-      fetch(e.request)
+      fetch(e.request.url,{cache:'no-store'})
         .then(res=>{
           caches.open(CACHE_NAME).then(c=>c.put(e.request,res.clone()));
           return res;
