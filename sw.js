@@ -1,4 +1,4 @@
-const CACHE_NAME='duomk-v5';
+const CACHE_NAME='duomk-v6';
 const CORE_ASSETS=[
   './manifest.webmanifest',
   './icon.png'
