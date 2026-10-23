@@ -2519,11 +2519,8 @@ function fetalHeightFromFemur(femurCm){
 }
 
 /* ── Percentil de peso fetal estimado (PFE) por idade gestacional ──
-   Combina Hadlock (1991, 20–40s) com INTERGROWTH-21st (30–40s, mais fiel
-   perto do termo): abaixo de 30s usa só Hadlock, de 35s em diante usa só
-   INTERGROWTH, e entre 30 e 35s mistura as duas linearmente. Tabelas e
-   regra de mistura já validadas em outro projeto — mantidas exatamente
-   aqui, só adaptadas ao layout/nomenclatura do DUO-MK. */
+   Tabela de referência Hadlock (1991, 20–40s), pesos em g nos percentis
+   p3, p10, p50 e p90. Mesma regra da calculadora do site da clínica. */
 const PFE_HADLOCK={
   20:[247,275,331,387],21:[298,331,399,467],22:[357,397,478,559],23:[424,472,568,664],
   24:[503,556,670,784],25:[590,653,785,918],26:[685,758,913,1068],27:[791,875,1055,1234],
@@ -2531,11 +2528,6 @@ const PFE_HADLOCK={
   32:[1465,1621,1953,2285],33:[1622,1795,2162,2530],34:[1788,1978,2377,2781],35:[1955,2164,2595,3036],
   36:[2126,2352,2813,3291],37:[2294,2537,3028,3543],38:[2455,2716,3236,3786],39:[2607,2884,3435,4019],
   40:[2747,3039,3619,4234]
-};
-const PFE_INTERGROWTH={
-  30:[967,1089,1396,1813],31:[1062,1207,1568,2050],32:[1162,1334,1755,2304],33:[1269,1469,1954,2570],
-  34:[1380,1612,2162,2843],35:[1494,1761,2378,3116],36:[1612,1913,2594,3381],37:[1731,2068,2806,3629],
-  38:[1851,2221,3006,3850],39:[1969,2368,3186,4034],40:[2085,2505,3338,4171]
 };
 const PFE_Z=[-1.8808,-1.2816,0,1.2816]; // z-scores padrão de p3, p10, p50, p90
 
@@ -2550,14 +2542,9 @@ function pfeInterpTable(table,gaWeeks){
   const t=w-lo;
   return table[lo].map((v,i)=>v+(table[hi][i]-v)*t);
 }
-// Linha [p3,p10,p50,p90] final pra uma GA, misturando Hadlock e INTERGROWTH.
-function pfeMixedRow(gaWeeks){
-  const hadlock=pfeInterpTable(PFE_HADLOCK,gaWeeks);
-  if(gaWeeks<30)return hadlock;
-  const intergrowth=pfeInterpTable(PFE_INTERGROWTH,gaWeeks);
-  if(gaWeeks>=35)return intergrowth;
-  const t=(gaWeeks-30)/(35-30);
-  return hadlock.map((v,i)=>v+(intergrowth[i]-v)*t);
+// Linha [p3,p10,p50,p90] de Hadlock pra uma GA.
+function pfeHadlockRow(gaWeeks){
+  return pfeInterpTable(PFE_HADLOCK,gaWeeks);
 }
 // Aproximação de Abramowitz & Stegun 7.1.26 pra função erro.
 function pfeErf(x){
@@ -2584,7 +2571,7 @@ function pfeClassify(percentile){
 function calcPfePercentile(weeks,days,weightG){
   const gaWeeks=weeks+days/7;
   if(gaWeeks<20||gaWeeks>40+6/7||!weightG||weightG<50||weightG>6000)return null;
-  const[p3,p10,p50,p90]=pfeMixedRow(gaWeeks);
+  const[p3,p10,p50,p90]=pfeHadlockRow(gaWeeks);
   const lnP3=Math.log(p3),lnP10=Math.log(p10),lnP50=Math.log(p50),lnP90=Math.log(p90);
   const lnW=Math.log(weightG);
   const lerp=(x1,y1,x2,y2,x)=>y1+(y2-y1)*(x-x1)/(x2-x1);
